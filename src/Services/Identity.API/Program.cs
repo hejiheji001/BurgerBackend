@@ -22,8 +22,9 @@ app.UseCookiePolicy(new CookiePolicyOptions { MinimumSameSitePolicy = SameSiteMo
 
 app.UseRouting();
 
-app.UseIdentityServer();
+app.UseAuthentication();
 
+app.UseIdentityServer();
 
 app.UseAuthorization();
 
@@ -126,6 +127,8 @@ namespace Identity.API
         {
             builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
                 .AddEntityFrameworkStores<ApplicationDbContext>()
+                .AddSignInManager<SignInManager<ApplicationUser>>()
+                .AddUserManager<UserManager<ApplicationUser>>()
                 .AddDefaultTokenProviders();
         }
 
@@ -155,6 +158,18 @@ namespace Identity.API
         public static void AddCustomAuthentication(this WebApplicationBuilder builder)
         {
             builder.Services.AddAuthentication();
+            builder.Services.AddAuthorization(options =>
+            {
+                options.AddPolicy("TenantPolicy", policy => policy.RequireRole("Tenant"));
+                options.AddPolicy("HostPolicy", policy => policy.RequireRole("Host"));
+                options.AddPolicy("AdminPolicy", policy => policy.RequireRole("Admin"));
+                options.AddPolicy("DashboardPolicy", policy => policy.RequireAssertion(x => (
+                    x.User.IsInRole("Host") || x.User.IsInRole("Tenant")
+                )));
+
+            });
+
+
         }
 
         public static void AddCustomHealthChecks(this WebApplicationBuilder builder)

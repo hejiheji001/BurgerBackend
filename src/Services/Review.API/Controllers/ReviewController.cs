@@ -1,10 +1,7 @@
-using System.Security.Claims;
-using Review.API.Model;
-using Review.API.Services;
-
 namespace Review.API.Controllers;
 
 [Route("api/v1/[controller]")]
+[Authorize]
 [ApiController]
 public class ReviewController : ControllerBase
 {

@@ -23,13 +23,6 @@ public class ReviewIntegrationEventService : IReviewIntegrationEventService, IDi
         _eventLogService = _integrationEventLogServiceFactory(_reviewContext.Database.GetDbConnection());
     }
 
-    public void Dispose()
-    {
-        Dispose(true);
-        // https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1816
-        GC.SuppressFinalize(this);
-    }
-
     public async Task PublishThroughEventBusAsync(IntegrationEvent evt)
     {
         try
@@ -67,6 +60,13 @@ public class ReviewIntegrationEventService : IReviewIntegrationEventService, IDi
         });
     }
 
+    public void Dispose()
+    {
+        Dispose(true);
+        // https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1816
+        GC.SuppressFinalize(this);
+    }
+    
     protected virtual void Dispose(bool disposing)
     {
         if (!disposedValue)

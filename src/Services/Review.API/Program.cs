@@ -41,19 +41,6 @@ IWebHost CreateHostBuilder(IConfiguration configuration, string[] args) =>
     WebHost.CreateDefaultBuilder(args)
         .ConfigureAppConfiguration(x => x.AddConfiguration(configuration))
         .CaptureStartupErrors(false)
-        .ConfigureKestrel(options =>
-        {
-            var ports = GetDefinedPorts(configuration);
-            options.Listen(IPAddress.Any, ports.httpPort, listenOptions =>
-            {
-                listenOptions.Protocols = HttpProtocols.Http1AndHttp2;
-            });
-            options.Listen(IPAddress.Any, ports.grpcPort, listenOptions =>
-            {
-                listenOptions.Protocols = HttpProtocols.Http2;
-            });
-
-        })
         .UseStartup<Startup>()
         .UseContentRoot(Directory.GetCurrentDirectory())
         .UseWebRoot("Pics")
@@ -74,13 +61,6 @@ Serilog.ILogger CreateSerilogLogger(IConfiguration configuration)
     loggerBuilder.ReadFrom.Configuration(configuration);
 
     return loggerBuilder.CreateLogger();
-}
-
-(int httpPort, int grpcPort) GetDefinedPorts(IConfiguration config)
-{
-    var grpcPort = config.GetValue("GRPC_PORT", 81);
-    var port = config.GetValue("PORT", 80);
-    return (port, grpcPort);
 }
 
 namespace Review.API
@@ -108,10 +88,6 @@ namespace Review.API
                         TimeSpan.FromSeconds(8),
                     });
 
-                //if the sql server container is not created on run docker compose this
-                //migration can't fail for network related exception. The retry options for DbContext only 
-                //apply to transient exceptions
-                // Note that this is NOT applied when running some orchestrators (let the orchestrator to recreate the failing service)
                 retry.Execute(() => InvokeSeeder(seeder, context, services));
 
                 logger.LogInformation("Migrated database associated with context {DbContextName}", typeof(TContext).Name);
@@ -132,7 +108,7 @@ namespace Review.API
         }
     }
 
-    public partial class Program
+    public class Program
     {
         public static string AppName => "Review.API";
     }

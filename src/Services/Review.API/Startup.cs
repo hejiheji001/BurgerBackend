@@ -1,4 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Review.API.Controllers;
 using Review.API.Infrastructure.Middlewares;
 using Review.API.Services;
@@ -59,6 +60,7 @@ public class Startup
             });
 
         app.UseRouting();
+        
         app.UseCors("CorsPolicy");
         ConfigureAuth(app);
 
@@ -103,11 +105,10 @@ static class CustomExtensionsMethods
     public static IServiceCollection AddCustomMvc(this IServiceCollection services)
     {
         // Add framework services.
-        services.AddControllers(options => { })
-            // Added for functional tests
+        services.AddControllers( )
             .AddApplicationPart(typeof(ReviewController).Assembly)
             .AddJsonOptions(options => options.JsonSerializerOptions.WriteIndented = true);
-
+        services.AddHttpContextAccessor();
         services.AddCors(options =>
         {
             options.AddPolicy("CorsPolicy",
@@ -211,11 +212,9 @@ static class CustomExtensionsMethods
     public static IServiceCollection AddCustomIntegrations(this IServiceCollection services,
         IConfiguration configuration)
     {
-        services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
         services.AddTransient<IIdentityService, IdentityService>();
         services.AddTransient<Func<DbConnection, IIntegrationEventLogService>>(
             sp => c => new IntegrationEventLogService(c));
-
 
         services.AddTransient<IReviewIntegrationEventService, ReviewIntegrationEventService>();
 
@@ -306,7 +305,7 @@ static class CustomExtensionsMethods
     public static IServiceCollection AddCustomAuthentication(this IServiceCollection services,
         IConfiguration configuration)
     {
-        // prevent from mapping "sub" claim to nameidentifier.
+        // prevent from mapping "sub" claim to name identifier.
         JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Remove("sub");
 
         var identityUrl = configuration.GetValue<string>("IdentityUrl");
@@ -317,7 +316,8 @@ static class CustomExtensionsMethods
             options.RequireHttpsMetadata = false;
             options.Audience = "review";
             options.TokenValidationParameters.ValidateAudience = false;
-        });
+        }).AddCookie(CookieAuthenticationDefaults.AuthenticationScheme,
+            options => configuration.Bind("CookieSettings", options));
 
         return services;
     }

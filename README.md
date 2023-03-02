@@ -41,8 +41,23 @@ https://github.com/dotnet-architecture/eShopOnContainers
 
 
 ### Issues & Solutions:
-1. Spatial data mapping
-2. Docker compose networking
-3. Opening hours
-
+1. Spatial Data:
+	- EF Core Support: https://learn.microsoft.com/en-us/ef/core/modeling/spatial
+	- DB Mapping: https://learn.microsoft.com/en-us/ef/core/providers/sql-server/spatial
+	- JSON Serialization: https://github.com/NetTopologySuite/NetTopologySuite.IO.GeoJSON
+    - Distance Calculation: 
+      - Projection: https://learn.microsoft.com/en-us/ef/core/modeling/spatial#srid-ignored-during-client-operations
+      - Coordinate System Lookup: https://epsg.io/
+      - Degree to Distance: https://sciencing.com/convert-latitude-longtitude-feet-2724.html
+      
+2. Docker compose networking:
+   - Config: https://docs.docker.com/compose/networking/
+   - VPN Issues: Container(ASP.Net) can't access another container(SQL Server) in the same docker compose network. Try close VPN!!
+   
+3. EF Core:
+   - Iterating with `IAsyncEnumerable`:
+     https://learn.microsoft.com/en-us/archive/msdn-magazine/2019/november/csharp-iterating-with-async-enumerables-in-csharp-8
+   - Connection Resiliency: https://docs.microsoft.com/en-us/ef/core/miscellaneous/connection-resiliency
+   - `TimeOnly`: https://docs.microsoft.com/en-us/dotnet/api/system.timeonly?view=netcore-3.1
+   - `GC.SuppressFinalize`: https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1816
 
