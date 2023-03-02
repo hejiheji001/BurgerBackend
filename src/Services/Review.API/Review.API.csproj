@@ -5,7 +5,6 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-        <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
     </PropertyGroup>
 
     <ItemGroup>
@@ -49,6 +48,7 @@
         <ProjectReference Include="..\..\EventBus\EventBus\EventBus.csproj" />
         <ProjectReference Include="..\..\EventBus\EventLog\EventLog.csproj" />
         <ProjectReference Include="..\Identity.API\Identity.API.csproj" />
+        <ProjectReference Include="..\Listing.API\Listing.API.csproj" />
     </ItemGroup>
 
 </Project>

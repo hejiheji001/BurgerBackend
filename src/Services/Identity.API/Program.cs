@@ -1,7 +1,3 @@
-using Identity.API;
-using Identity.API.Configuration;
-using Identity.API.Services;
-
 var builder = WebApplication.CreateBuilder();
 
 builder.AddCustomConfiguration();

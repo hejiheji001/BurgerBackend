@@ -1,4 +1,6 @@
-namespace IdentityServerHost.Quickstart.UI;
+using Microsoft.AspNetCore.Mvc;
+
+namespace Identity.API.Quickstart.UI;
 
 public static class Extensions
 {

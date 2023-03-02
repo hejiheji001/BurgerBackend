@@ -25,6 +25,5 @@ public class ReviewContext : DbContext
         reviews.Property(ci => ci.CreationTime).IsRequired();
         reviews.Property(ci => ci.ModificationTime).IsRequired();
         reviews.Property(ci => ci.ImageUrl).IsRequired(false);
-        reviews.Ignore(ci => ci.AverageScore);
     }
 }

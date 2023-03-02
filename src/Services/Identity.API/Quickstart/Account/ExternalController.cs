@@ -1,4 +1,9 @@
-namespace IdentityServerHost.Quickstart.UI;
+using Duende.IdentityServer.Events;
+using Duende.IdentityServer.Stores;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace Identity.API.Quickstart.UI;
 
 [SecurityHeaders]
 [AllowAnonymous]

@@ -47,6 +47,8 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://0.0.0.0:80
+      - IdentityUrlExternal=http://docker.for.mac.localhost:5103
+      - IdentityUrl=http://docker.for.mac.localhost:5103
       - ConnectionString=Server=sqldata;Initial Catalog=BurgerBackend.ReviewDb;User Id=sa;Password=Pass@word;Encrypt=False;
       - EventBusConnection=rabbitmq
       - PATH_BASE=/review-api

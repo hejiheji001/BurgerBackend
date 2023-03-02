@@ -1,8 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
-using Review.API.Controllers;
 using Review.API.Infrastructure.Middlewares;
 using Review.API.Services;
-using StackExchange.Redis;
 
 namespace Review.API;
 
@@ -16,121 +14,31 @@ public class Startup
     public IConfiguration Configuration { get; }
 
     // This method gets called by the runtime. Use this method to add services to the container.
-    public virtual IServiceProvider ConfigureServices(IServiceCollection services)
+    public IServiceProvider ConfigureServices(IServiceCollection services)
     {
         services
             .AddCustomMVC(Configuration)
             .AddIdentity<ApplicationUser, IdentityRole>();
-        
+
+        // services.AddAspNetIdentity<ApplicationUser>();
+
         services.AddCustomDbContext(Configuration)
             .AddCustomOptions(Configuration)
             .AddIntegrationServices(Configuration)
             .AddEventBus(Configuration)
             .AddSwagger(Configuration)
             .AddCustomHealthCheck(Configuration);
-        
-        services.AddControllers(options => { }) // Added for functional tests
-            .AddApplicationPart(typeof(ReviewController).Assembly)
-            .AddJsonOptions(options => options.JsonSerializerOptions.WriteIndented = true);
-
 
         ConfigureAuthService(services);
-
-        services.Configure<ReviewSettings>(Configuration);
-
-        //By connecting here we are making sure that our service
-        //cannot start until redis is ready. This might slow down startup,
-        //but given that there is a delay on resolving the ip address
-        //and then creating the connection it seems reasonable to move
-        //that cost to startup instead of having the first request pay the
-        //penalty.
-        services.AddSingleton<ConnectionMultiplexer>(sp =>
-        {
-            var settings = sp.GetRequiredService<IOptions<ReviewSettings>>().Value;
-            var configuration = ConfigurationOptions.Parse(settings.ConnectionString, true);
-
-            return ConnectionMultiplexer.Connect(configuration);
-        });
-
         services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+        
         services.AddTransient<IIdentityService, IdentityService>();
-
         services.AddOptions();
 
         var container = new ContainerBuilder();
         container.Populate(services);
 
         return new AutofacServiceProvider(container.Build());
-    }
-
-    // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-    public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
-    {
-        var pathBase = Configuration["PATH_BASE"];
-        if (!string.IsNullOrEmpty(pathBase))
-        {
-            app.UsePathBase(pathBase);
-        }
-
-        app.UseSwagger()
-            .UseSwaggerUI(setup =>
-            {
-                setup.SwaggerEndpoint(
-                    $"{(!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty)}/swagger/v1/swagger.json",
-                    "Review.API V1");
-                setup.OAuthClientId("review");
-                setup.OAuthAppName("Review Swagger UI");
-            });
-
-        app.UseRouting();
-        app.UseCors("CorsPolicy");
-        ConfigureAuth(app);
-
-        app.UseStaticFiles();
-
-        app.UseEndpoints(endpoints =>
-        {
-            endpoints.MapDefaultControllerRoute();
-            endpoints.MapControllers();
-            endpoints.MapHealthChecks("/hc", new HealthCheckOptions()
-            {
-                Predicate = _ => true,
-                ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
-            });
-            endpoints.MapHealthChecks("/liveness", new HealthCheckOptions
-            {
-                Predicate = r => r.Name.Contains("self")
-            });
-        });
-    }
-    
-    public IServiceCollection AddCustomDbContext(IServiceCollection services, IConfiguration configuration)
-    {
-        services.AddDbContext<ReviewContext>(options =>
-            {
-                options.UseSqlServer(configuration["ConnectionString"],
-                    sqlOptions =>
-                    {
-                        sqlOptions.MigrationsAssembly(typeof(Startup).GetTypeInfo().Assembly.GetName().Name);
-                        //Configuring Connection Resiliency: https://docs.microsoft.com/en-us/ef/core/miscellaneous/connection-resiliency 
-                        sqlOptions.EnableRetryOnFailure(15, TimeSpan.FromSeconds(30),
-                            null);
-                    });
-            }
-        ).AddDbContext<IntegrationEventLogContext>(options =>
-            {
-                options.UseSqlServer(configuration["ConnectionString"],
-                    sqlOptions =>
-                    {
-                        sqlOptions.MigrationsAssembly(typeof(Startup).GetTypeInfo().Assembly.GetName().Name);
-                        //Configuring Connection Resiliency: https://docs.microsoft.com/en-us/ef/core/miscellaneous/connection-resiliency 
-                        sqlOptions.EnableRetryOnFailure(15, TimeSpan.FromSeconds(30),
-                            null);
-                    });
-            }
-        );
-
-        return services;
     }
 
     private void ConfigureAuthService(IServiceCollection services)
@@ -158,33 +66,41 @@ public class Startup
         });
     }
 
-    protected virtual void ConfigureAuth(IApplicationBuilder app)
+    // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+    public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
     {
-        app.UseAuthentication();
-        app.UseAuthorization();
-    }
-
-    private void RegisterEventBus(IServiceCollection services)
-    {
-        services.AddSingleton<IEventBus, EventBusRabbitMQ.EventBusRabbitMQ>(sp =>
+        var pathBase = Configuration["PATH_BASE"];
+        if (!string.IsNullOrEmpty(pathBase))
         {
-            var subscriptionClientName = Configuration["SubscriptionClientName"];
-            var rabbitMQPersistentConnection = sp.GetRequiredService<IRabbitMQPersistentConnection>();
-            var iLifetimeScope = sp.GetRequiredService<ILifetimeScope>();
-            var logger = sp.GetRequiredService<ILogger<EventBusRabbitMQ.EventBusRabbitMQ>>();
-            var eventBusSubscriptionsManager = sp.GetRequiredService<IEventBusSubscriptionsManager>();
+            app.UsePathBase(pathBase);
+        }
 
-            var retryCount = 5;
-            if (!string.IsNullOrEmpty(Configuration["EventBusRetryCount"]))
+        if (env.IsDevelopment())
+        {
+            app.UseDeveloperExceptionPage();
+            app.UseSwagger();
+            app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", Program.AppName + " v1"));
+        }
+
+        app.UseRouting();
+        app.UseCors("CorsPolicy");
+        app.UseEndpoints(endpoints =>
+        {
+            endpoints.MapDefaultControllerRoute();
+            endpoints.MapControllers();
+            endpoints.MapHealthChecks("/hc", new HealthCheckOptions
             {
-                retryCount = int.Parse(Configuration["EventBusRetryCount"]);
-            }
-
-            return new EventBusRabbitMQ.EventBusRabbitMQ(rabbitMQPersistentConnection, logger, iLifetimeScope,
-                eventBusSubscriptionsManager, subscriptionClientName, retryCount);
+                Predicate = _ => true,
+                ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+            });
+            endpoints.MapHealthChecks("/liveness", new HealthCheckOptions
+            {
+                Predicate = r => r.Name.Contains("self")
+            });
         });
-
-        services.AddSingleton<IEventBusSubscriptionsManager, InMemoryEventBusSubscriptionsManager>();
+        
+        var eventBus = app.ApplicationServices.GetRequiredService<IEventBus>();
+        eventBus.Subscribe<PlaceReviewUpdatedEvent, PlaceReviewUpdatedEventHandler>();
     }
 }
 

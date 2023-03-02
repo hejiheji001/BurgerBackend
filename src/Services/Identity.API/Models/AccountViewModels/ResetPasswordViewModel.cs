@@ -1,4 +1,4 @@
-﻿namespace Microsoft.eShopOnContainers.Services.Identity.API.Models.AccountViewModels
+﻿namespace Identity.API.Models.AccountViewModels
 {
     public record ResetPasswordViewModel
     {

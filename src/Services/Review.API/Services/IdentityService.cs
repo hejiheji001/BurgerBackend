@@ -11,6 +11,13 @@ public class IdentityService : IIdentityService
 
     public string GetUserIdentity()
     {
+        foreach (var s1 in _context.HttpContext.User.Claims.Select(s => s.Value))
+        {
+            Console.WriteLine(s1);
+        }
+        
+        Console.WriteLine("USER: " + _context.HttpContext.User.Claims.Count());
+        
         return _context.HttpContext.User.FindFirst("sub").Value;
     }
 }

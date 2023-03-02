@@ -30,3 +30,6 @@ global using System.Text.RegularExpressions;
 global using System.Threading.Tasks;
 global using System;
 global using Microsoft.AspNetCore.Http;
+global using Identity.API;
+global using Identity.API.Configuration;
+global using Identity.API.Services;

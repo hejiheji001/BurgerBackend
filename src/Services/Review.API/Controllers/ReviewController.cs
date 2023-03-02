@@ -78,11 +78,15 @@ public class ReviewController : ControllerBase
     [Route("items")]
     [HttpPost]
     [ProducesResponseType((int)HttpStatusCode.Created)]
+    [ProducesResponseType((int)HttpStatusCode.Forbidden)]
     public async Task<ActionResult> CreateReviewItemAsync([FromBody] ReviewItem newReview)
     {
         var userId = _identityService.GetUserIdentity();
-        var userName = this.HttpContext.User.FindFirst(x => x.Type == ClaimTypes.Name).Value;
-        
+        if (userId == null)
+        {
+            return Forbid();
+        }
+
         var item = new ReviewItem
         {
             Id = newReview.Id,
@@ -90,7 +94,6 @@ public class ReviewController : ControllerBase
             TasteScore = newReview.TasteScore,
             TextureScore = newReview.TextureScore,
             VisualScore = newReview.VisualScore,
-            CreationTime = DateTime.UtcNow,
             Comment = newReview.Comment,
             UserId = userId
         };
@@ -107,10 +110,28 @@ public class ReviewController : ControllerBase
     [Route("items")]
     [HttpPut]
     [ProducesResponseType((int)HttpStatusCode.NotFound)]
+    [ProducesResponseType((int)HttpStatusCode.Forbidden)]
     [ProducesResponseType((int)HttpStatusCode.Created)]
-    public async Task<ActionResult> UpdateReviewItemAsync([FromBody] ReviewItem item)
+    public async Task<ActionResult> UpdateReviewItemAsync([FromBody] ReviewItem newReview)
     {
-        throw new NotImplementedException();
+        var userId = _identityService.GetUserIdentity();
+        if (userId == null) return Forbid();
+        
+        //check if the item exists and belongs to thr userId
+        var itemToUpdate = await _ReviewContext.ReviewItems.SingleOrDefaultAsync(ci => ci.Id == newReview.Id && ci.UserId == userId);
+        
+        //if not return no authorization
+        if (itemToUpdate == null) return Forbid();
+        
+        itemToUpdate.ModificationTime = DateTime.Now;
+        itemToUpdate.TasteScore = newReview.TasteScore;
+        itemToUpdate.TextureScore = newReview.TextureScore;
+        itemToUpdate.VisualScore = newReview.VisualScore;
+        itemToUpdate.Comment = newReview.Comment;
+
+        _ReviewContext.Update(itemToUpdate);
+        var name = nameof(ItemsByIdAsync);
+        return CreatedAtAction(name, new { id = newReview.Id }, null);
     }
 
     //DELETE api/v1/[controller]/id
@@ -120,6 +141,6 @@ public class ReviewController : ControllerBase
     [ProducesResponseType((int)HttpStatusCode.NotFound)]
     public async Task<ActionResult> DeleteReviewItemAsync(int id)
     {
-        throw new NotImplementedException();
+        return NotFound("This API is Not Implemented.");
     }
 }

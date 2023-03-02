@@ -8,17 +8,8 @@ public record ReviewItem
     public int TasteScore { get; set; }
     public int TextureScore { get; set; }
     public int VisualScore { get; set; }
-
-    // Each Listing can have multiple reviews, so we need to calculate the average rate
-    public double AverageScore { get; set; }
     public string Comment { get; set; }
-
-    public DateTime CreationTime
-    {
-        get => DateTime.Now;
-        set => CreationTime = value;
-    }
-
+    public DateTime CreationTime { get; set; }
     public DateTime ModificationTime { get; set; }
     public string ImageUrl { get; set; }
 }

@@ -39,7 +39,7 @@ public class Config
         {
             new()
             {
-                ClientId = "reviewswaggerui",
+                ClientId = "review",
                 ClientName = "Review Swagger UI",
                 AllowedGrantTypes = GrantTypes.Implicit,
                 AllowAccessTokensViaBrowser = true,

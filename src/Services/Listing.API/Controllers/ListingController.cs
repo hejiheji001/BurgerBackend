@@ -168,7 +168,7 @@ public class ListingController : ControllerBase
     [ProducesResponseType((int)HttpStatusCode.Created)]
     public async Task<ActionResult> CreateListingItemAsync([FromBody] ListingItem item)
     {
-        throw new NotImplementedException();
+        return NotFound("This API is Not Implemented.");
     }
 
     //PUT api/v1/[controller]/items
@@ -178,7 +178,7 @@ public class ListingController : ControllerBase
     [ProducesResponseType((int)HttpStatusCode.Created)]
     public async Task<ActionResult> UpdateListingItemAsync([FromBody] ListingItem item)
     {
-        throw new NotImplementedException();
+        return NotFound("This API is Not Implemented.");
     }
 
     //DELETE api/v1/[controller]/id
@@ -188,6 +188,6 @@ public class ListingController : ControllerBase
     [ProducesResponseType((int)HttpStatusCode.NotFound)]
     public async Task<ActionResult> DeleteListingItemAsync(int id)
     {
-        throw new NotImplementedException();
+        return NotFound("This API is Not Implemented.");
     }
 }

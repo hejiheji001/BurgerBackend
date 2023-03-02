@@ -4,8 +4,9 @@
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
-namespace IdentityServerHost.Quickstart.UI
+namespace Identity.API.Quickstart.UI
 {
     [SecurityHeaders]
     [AllowAnonymous]
@@ -27,11 +28,11 @@ namespace IdentityServerHost.Quickstart.UI
 
         public IActionResult Index()
         {
-            if (_environment.IsDevelopment())
-            {
-                // only show in development
-                return View();
-            }
+            // if (_environment.IsDevelopment())
+            // {
+            //     // only show in development
+            //     return View();
+            // }
 
             _logger.LogInformation("Homepage is disabled in production. Returning 404.");
             return NotFound();

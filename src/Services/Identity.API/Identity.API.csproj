@@ -22,6 +22,7 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="7.0.0" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="7.0.0" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer.NetTopologySuite" Version="7.0.0" />
         <PackageReference Include="Polly" Version="7.2.3" />
@@ -41,6 +42,33 @@
         <Content Include="..\..\..\.dockerignore">
             <Link>.dockerignore</Link>
         </Content>
+    </ItemGroup>
+
+    <ItemGroup>
+      <_ContentIncludedByDefault Remove="Views\Account\AccessDenied.cshtml" />
+      <_ContentIncludedByDefault Remove="Views\Account\LoggedOut.cshtml" />
+      <_ContentIncludedByDefault Remove="Views\Account\Login.cshtml" />
+      <_ContentIncludedByDefault Remove="Views\Account\Logout.cshtml" />
+      <_ContentIncludedByDefault Remove="Views\Consent\Index.cshtml" />
+      <_ContentIncludedByDefault Remove="Views\Device\Success.cshtml" />
+      <_ContentIncludedByDefault Remove="Views\Device\UserCodeCapture.cshtml" />
+      <_ContentIncludedByDefault Remove="Views\Device\UserCodeConfirmation.cshtml" />
+      <_ContentIncludedByDefault Remove="Views\Diagnostics\Index.cshtml" />
+      <_ContentIncludedByDefault Remove="Views\Grants\Index.cshtml" />
+      <_ContentIncludedByDefault Remove="Views\Home\Index.cshtml" />
+      <_ContentIncludedByDefault Remove="Views\Shared\Error.cshtml" />
+      <_ContentIncludedByDefault Remove="Views\Shared\Redirect.cshtml" />
+      <_ContentIncludedByDefault Remove="Views\Shared\_Layout.cshtml" />
+      <_ContentIncludedByDefault Remove="Views\Shared\_ScopeListItem.cshtml" />
+      <_ContentIncludedByDefault Remove="Views\Shared\_ValidationSummary.cshtml" />
+      <_ContentIncludedByDefault Remove="Views\_ViewImports.cshtml" />
+      <_ContentIncludedByDefault Remove="Views\_ViewStart.cshtml" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <UpToDateCheckInput Remove="Views\Consent\Index.cshtml" />
+      <UpToDateCheckInput Remove="Views\Diagnostics\Index.cshtml" />
+      <UpToDateCheckInput Remove="Views\Home\Index.cshtml" />
     </ItemGroup>
 
 </Project>
