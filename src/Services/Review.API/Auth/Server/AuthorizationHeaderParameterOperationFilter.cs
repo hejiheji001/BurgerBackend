@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc.Authorization;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
-namespace Microsoft.eShopOnContainers.Services.Basket.API.Auth.Server;
+namespace Review.API.Auth.Server;
 
 public class AuthorizationHeaderParameterOperationFilter : IOperationFilter
 {

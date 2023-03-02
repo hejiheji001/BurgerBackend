@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
-namespace Identity.API.Quickstart.UI
+namespace Identity.API.Quickstart.Home
 {
     [SecurityHeaders]
     [AllowAnonymous]

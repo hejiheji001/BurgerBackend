@@ -1,16 +1,17 @@
+using System.Diagnostics;
 using NetTopologySuite.IO.Converters;
 
 namespace Listing.API.Infrastructure.Repo;
 
-public class RedisListingRepository : IListingRepository
+public class RedisRedisListingRepository : IRedisListingRepository
 {
     private readonly IDatabase _database;
-    private readonly ILogger<RedisListingRepository> _logger;
+    private readonly ILogger<RedisRedisListingRepository> _logger;
     private readonly ConnectionMultiplexer _redis;
 
-    public RedisListingRepository(ILoggerFactory loggerFactory, ConnectionMultiplexer redis)
+    public RedisRedisListingRepository(ILoggerFactory loggerFactory, ConnectionMultiplexer redis)
     {
-        _logger = loggerFactory.CreateLogger<RedisListingRepository>();
+        _logger = loggerFactory.CreateLogger<RedisRedisListingRepository>();
         _redis = redis;
         _database = redis.GetDatabase();
     }
@@ -18,6 +19,28 @@ public class RedisListingRepository : IListingRepository
     public async Task<bool> DeleteListingGroupAsync(string searchId)
     {
         return await _database.KeyDeleteAsync(searchId);
+    }
+
+    public async Task<bool> UpdateListingReviewGroupAsync(int searchId, ReviewGroup eventReviewGroup)
+    {
+        var data = await _database.StringGetAsync(searchId.ToString());
+
+        if (data.IsNullOrEmpty) return false;
+
+        var listingGroup = JsonSerializer.Deserialize<ListingGroup>(data, new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+            Converters = { new GeoJsonConverterFactory() }
+        });
+
+        if (listingGroup != null)
+        {
+            listingGroup.Items.First().ReviewGroup = eventReviewGroup;
+            await UpdateListingGroupAsync(listingGroup);
+            return true;
+        }
+
+        return false;
     }
 
     public IEnumerable<string> GetSearchIds()

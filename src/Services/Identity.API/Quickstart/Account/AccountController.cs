@@ -7,7 +7,7 @@ using Duende.IdentityServer.Stores;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Identity.API.Quickstart.UI
+namespace Identity.API.Quickstart.Account
 {
     [SecurityHeaders]
     [AllowAnonymous]

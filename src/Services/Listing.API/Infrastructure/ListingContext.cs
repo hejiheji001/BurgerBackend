@@ -24,6 +24,7 @@ public class ListingContext : DbContext
         listing.Property(ci => ci.OpeningTimeStart).IsRequired();
         listing.Property(ci => ci.OpeningTimeEnd).IsRequired();
         listing.Property(ci => ci.ImageUrl).IsRequired(false);
+        listing.Ignore(ci => ci.ReviewGroup);
         listing.Ignore(ci => ci.IsOpen);
         listing.Ignore(ci => ci.Distance);
     }

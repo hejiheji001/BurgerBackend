@@ -1,8 +1,8 @@
 ﻿namespace Listing.API.IntegrationEvents.Events;
 
-public record PlaceReviewUpdatedEvent : IntegrationEvent
+public record ListingVisitedEvent : IntegrationEvent
 {
-    public PlaceReviewUpdatedEvent(int listingItemId)
+    public ListingVisitedEvent(int listingItemId)
     {
         ListingItemId = listingItemId;
     }

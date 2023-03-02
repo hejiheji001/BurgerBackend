@@ -1,4 +1,4 @@
-using Listing.API.Services;
+using Listing.API.Infrastructure.Repo;
 using ProjNet;
 using ProjNet.CoordinateSystems;
 using ProjNet.CoordinateSystems.Transformations;
@@ -12,24 +12,24 @@ public class ListingController : ControllerBase
     private readonly ListingContext _listingContext;
     private readonly IListingIntegrationEventService _listingIntegrationEventService;
     private readonly ListingSettings _settings;
-    private readonly IListingRepository _listingRepository;
-    private readonly IReviewService _reviewService;
+    private readonly IRedisListingRepository _redisListingRepository;
+    private readonly IEventBus _eventBus;
     private readonly ILogger<ListingController> _logger;
 
     //IOptionsSnapshot provides scoped lifetime for the settings object
     //and ensures that the settings are reloaded if the underlying file changes
     //https://docs.microsoft.com/en-us/aspnet/core/fundamentals/configuration/options?view=aspnetcore-3.1#reload-configuration-data-with-ioptionssnapshot
     public ListingController(ILogger<ListingController> logger, ListingContext context, IOptionsSnapshot<ListingSettings> settings,
-        IListingIntegrationEventService listingIntegrationEventService, IReviewService reviewService,
-        IListingRepository listingRepository)
+        IListingIntegrationEventService listingIntegrationEventService,
+        IRedisListingRepository redisListingRepository, IEventBus eventBus)
     {
         _listingContext = context ?? throw new ArgumentNullException(nameof(context));
         _listingIntegrationEventService = listingIntegrationEventService ??
                                           throw new ArgumentNullException(nameof(listingIntegrationEventService));
         _settings = settings.Value;
-        _reviewService = reviewService;
-        _listingRepository = listingRepository;
+        _redisListingRepository = redisListingRepository;
         _logger = logger;
+        _eventBus = eventBus;
         context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
     }
 
@@ -77,14 +77,14 @@ public class ListingController : ControllerBase
 
     private async Task<ActionResult<ListingItem>> GetItemByIdAsync(int id)
     {
-        var itemGroup = await _listingRepository.GetListingGroupAsync(id.ToString());
+        var itemGroup = await _redisListingRepository.GetListingGroupAsync(id.ToString());
         ListingItem result;
         if (itemGroup == null)
         {
             result = await _listingContext.ListingItems.SingleOrDefaultAsync(ci => ci.Id == id);
             if (result != null)
             {
-                await _listingRepository.UpdateListingGroupAsync(new ListingGroup
+                await _redisListingRepository.UpdateListingGroupAsync(new ListingGroup
                 {
                     SearchId = id.ToString(),
                     Items = new List<ListingItem> { result }
@@ -98,6 +98,20 @@ public class ListingController : ControllerBase
             _logger.LogInformation("Listing item with id {Id} was found in cache.", id);
         }
 
+        var eventMessage = new ListingVisitedEvent(id);
+        //Once a listing is visited, publish an to load reviews
+        try
+        {
+            _logger.LogInformation("Listing item with id {Id} was visited.", id);
+            _eventBus.Publish(eventMessage);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "ERROR Publishing integration event: {IntegrationEventId} from {AppName}", eventMessage.Id, Program.AppName);
+
+            throw;
+        }
+            
         return result;
     }
 
@@ -111,13 +125,13 @@ public class ListingController : ControllerBase
         var idsStr = string.Join("", idsToSelect.OrderDescending());
         
         List<ListingItem> result;
-        var itemGroup = await _listingRepository.GetListingGroupAsync(idsStr);
+        var itemGroup = await _redisListingRepository.GetListingGroupAsync(idsStr);
         if (itemGroup == null)
         {
             result = await _listingContext.ListingItems.Where(ci => idsToSelect.Contains(ci.Id)).ToListAsync();
             if (result.Any())
             {
-                await _listingRepository.UpdateListingGroupAsync(new ListingGroup
+                await _redisListingRepository.UpdateListingGroupAsync(new ListingGroup
                 {
                     SearchId = idsStr,
                     Items = result
@@ -134,28 +148,60 @@ public class ListingController : ControllerBase
         return result;
     }
     
-    [HttpGet]
-    [Route("items/review/{id:int}")]
-    [ProducesResponseType((int)HttpStatusCode.NotFound)]
-    [ProducesResponseType((int)HttpStatusCode.BadRequest)]
-    [ProducesResponseType(typeof(ListingReview), (int)HttpStatusCode.OK)]
-    public async Task<ActionResult<ListingGroup>> ItemReviewByIdAsync(int id)
+    private async Task<List<ListingItem>> GetItemsByNameAsync(string name, int pageSize, int pageIndex)
     {
-        if (id <= 0) return BadRequest();
-
-        var item = await _listingContext.ListingItems.SingleOrDefaultAsync(ci => ci.Id == id);
-
-        if (item != null)
+        var searchId = $"{name}-{pageSize * pageIndex}";
+        List<ListingItem> result;
+        var itemGroup = await _redisListingRepository.GetListingGroupAsync(searchId);
+        if (itemGroup == null)
         {
-            var listingReview = _reviewService.GetListingReview(item.Id);
-            listingReview.AverageScore = listingReview.ReviewItems.Any()
-                ? listingReview.ReviewItems.Average(s => (s.TasteScore + s.TextureScore + s.VisualScore) / 3)
-                : 0;
-            return Ok(listingReview);
+            result = await _listingContext.ListingItems
+                .Where(c => c.Name.StartsWith(name))
+                .Skip(pageSize * pageIndex)
+                .Take(pageSize)
+                .ToListAsync();
+            
+            if (result.Any())
+            {
+                await _redisListingRepository.UpdateListingGroupAsync(new ListingGroup
+                {
+                    SearchId = searchId,
+                    Items = result
+                });
+            }
+            _logger.LogInformation("Listing items with ids {Ids} were not found in cache. Retrieved from database.", searchId);
         }
-
-        return NotFound();
+        else
+        {
+            result = itemGroup.Items;
+            _logger.LogInformation("Listing items with ids {Ids} were found in cache.", searchId);
+        }
+        
+        return result;
     }
+    
+    // [HttpGet]
+    // [Route("items/review/{id:int}")]
+    // [ProducesResponseType((int)HttpStatusCode.NotFound)]
+    // [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+    // [ProducesResponseType(typeof(ListingReview), (int)HttpStatusCode.OK)]
+    // public async Task<ActionResult<ListingGroup>> ItemReviewByIdAsync(int id)
+    // {
+    //     if (id <= 0) return BadRequest();
+    //
+    //     var item = await _listingContext.ListingItems.SingleOrDefaultAsync(ci => ci.Id == id);
+    //
+    //     if (item != null)
+    //     {
+    //         var listingReview = _reviewService.GetListingReview(item.Id);
+    //         listingReview.AverageScore = listingReview.ReviewItems.Any()
+    //             ? listingReview.ReviewItems.Average(s => (s.TasteScore + s.TextureScore + s.VisualScore) / 3)
+    //             : 0;
+    //         return Ok(listingReview);
+    //     }
+    //
+    //     return NotFound();
+    // }
 
     // GET api/v1/[controller]/items/withname/[?longitude=3&latitude=10&withinMeters=100]
     [HttpGet]
@@ -231,11 +277,7 @@ public class ListingController : ControllerBase
     public async Task<IActionResult> ItemsWithNameAsync(string name, [FromQuery] int pageSize = 10,
         [FromQuery] int pageIndex = 0)
     {
-        var itemsOnPage = await _listingContext.ListingItems
-            .Where(c => c.Name.StartsWith(name))
-            .Skip(pageSize * pageIndex)
-            .Take(pageSize)
-            .ToListAsync();
+        var itemsOnPage =  await GetItemsByNameAsync(name, pageSize, pageIndex);
         return Ok(itemsOnPage);
     }
 

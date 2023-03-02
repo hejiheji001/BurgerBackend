@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Review.API.Controllers;
 using Review.API.Infrastructure.Middlewares;
+using Review.API.Infrastructure.Repo;
 using Review.API.Services;
 
 namespace Review.API;
@@ -32,7 +33,8 @@ public class Startup
 
         var container = new ContainerBuilder();
         container.Populate(services);
-
+        container.RegisterModule(new ApplicationModule());
+        // services.AddTransient<IReviewRepository, ReviewRepository>();
         return new AutofacServiceProvider(container.Build());
     }
 
@@ -60,7 +62,7 @@ public class Startup
             });
 
         app.UseRouting();
-        
+
         app.UseCors("CorsPolicy");
         ConfigureAuth(app);
 
@@ -85,6 +87,8 @@ public class Startup
 
     private void ConfigureEventBus(IApplicationBuilder app)
     {
+        var eventBus = app.ApplicationServices.GetRequiredService<IEventBus>();
+        eventBus.Subscribe<ListingVisitedEvent, ListingVisitedEventHandler>();
     }
 
     protected virtual void ConfigureAuth(IApplicationBuilder app)
@@ -105,7 +109,7 @@ static class CustomExtensionsMethods
     public static IServiceCollection AddCustomMvc(this IServiceCollection services)
     {
         // Add framework services.
-        services.AddControllers( )
+        services.AddControllers()
             .AddApplicationPart(typeof(ReviewController).Assembly)
             .AddJsonOptions(options => options.JsonSerializerOptions.WriteIndented = true);
         services.AddHttpContextAccessor();
@@ -298,7 +302,7 @@ static class CustomExtensionsMethods
         });
 
         services.AddSingleton<IEventBusSubscriptionsManager, InMemoryEventBusSubscriptionsManager>();
-
+        services.AddTransient<ListingVisitedEventHandler>();
         return services;
     }
 
@@ -334,5 +338,15 @@ static class CustomExtensionsMethods
             });
         });
         return services;
+    }
+}
+
+public class ApplicationModule : Autofac.Module
+{
+    protected override void Load(ContainerBuilder builder)
+    {
+        builder.RegisterType<ReviewRepository>()
+            .As<IReviewRepository>()
+            .InstancePerLifetimeScope();
     }
 }

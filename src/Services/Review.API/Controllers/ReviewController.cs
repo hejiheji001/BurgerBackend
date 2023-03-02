@@ -30,8 +30,7 @@ public class ReviewController : ControllerBase
     [Route("items")]
     [ProducesResponseType(typeof(IEnumerable<ReviewItem>), (int)HttpStatusCode.OK)]
     [ProducesResponseType((int)HttpStatusCode.BadRequest)]
-    public async Task<IActionResult> ItemsAsync([FromQuery] int pageSize = 10, [FromQuery] int pageIndex = 0,
-        string? ids = null)
+    public async Task<IActionResult> ItemsAsync([FromQuery] int pageSize = 10, [FromQuery] int pageIndex = 0)
     {
         var itemsOnPage = await _ReviewContext.ReviewItems
             .OrderBy(c => c.CreationTime)
@@ -40,19 +39,6 @@ public class ReviewController : ControllerBase
             .ToListAsync();
 
         return Ok(itemsOnPage);
-    }
-
-    private async Task<List<ReviewItem>> GetItemsByIdsAsync(string? ids)
-    {
-        var numIds = ids.Split(',').Select(id => (Ok: int.TryParse(id, out var x), Value: x));
-
-        if (!numIds.All(nid => nid.Ok)) return new List<ReviewItem>();
-
-        var idsToSelect = numIds.Select(id => id.Value);
-
-        var items = await _ReviewContext.ReviewItems.Where(ci => idsToSelect.Contains(ci.Id)).ToListAsync();
-
-        return items;
     }
 
     [HttpGet]
@@ -94,6 +80,8 @@ public class ReviewController : ControllerBase
             TextureScore = newReview.TextureScore,
             VisualScore = newReview.VisualScore,
             Comment = newReview.Comment,
+            CreationTime = DateTime.Now,
+            ModificationTime = DateTime.Now,
             UserId = userId
         };
 

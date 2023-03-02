@@ -20,6 +20,7 @@ public record ListingItem
         }
     }
 
+    public ReviewGroup ReviewGroup { get; set; }
     public string ImageUrl { get; set; }
     public double Distance { get; set; }
 }

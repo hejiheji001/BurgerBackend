@@ -1,6 +1,6 @@
 namespace Listing.API.Model;
 
-public record Reviews
+public record ReviewItem
 {
     public int Id { get; set; }
     public string UserId { get; set; }

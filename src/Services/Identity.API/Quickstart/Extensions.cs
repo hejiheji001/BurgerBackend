@@ -1,6 +1,7 @@
+using Identity.API.Quickstart.Account;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Identity.API.Quickstart.UI;
+namespace Identity.API.Quickstart;
 
 public static class Extensions
 {

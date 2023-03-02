@@ -1,7 +1,3 @@
-using Listing.API.Infrastructure.Repo;
-using Listing.API.Services;
-using NetTopologySuite.IO.Converters;
-
 namespace Listing.API;
 
 public class Startup
@@ -33,8 +29,7 @@ public class Startup
             return conn;
         });
         
-        services.AddTransient<IReviewService, ReviewService>();
-        services.AddTransient<IListingRepository, RedisListingRepository>();
+        services.AddTransient<IRedisListingRepository, RedisRedisListingRepository>();
         
         var container = new ContainerBuilder();
         container.Populate(services);
@@ -83,8 +78,9 @@ public class Startup
         });
 
         var eventBus = app.ApplicationServices.GetRequiredService<IEventBus>();
-        eventBus.Subscribe<PlaceReviewUpdatedEvent, PlaceReviewUpdatedEventHandler>();
-        // eventBus.Subscribe<PlaceStatusChangedToCloseEvent, PlaceStatusChangedToCloseEventHandler>();
+
+        eventBus.Subscribe<ListingReviewGroupRetrievedEvent, ListingReviewGroupRetrievedEventHandler>();
+        eventBus.Subscribe<ListingReviewGroupUpdatedEvent, ListingReviewGroupUpdatedEventHandler>();
     }
 }
 
@@ -267,8 +263,9 @@ public static class CustomExtensionMethods
         });
 
         services.AddSingleton<IEventBusSubscriptionsManager, InMemoryEventBusSubscriptionsManager>();
-        services.AddTransient<PlaceReviewUpdatedEventHandler>();
-
+        services.AddTransient<ListingReviewGroupRetrievedEventHandler>();
+        services.AddTransient<ListingReviewGroupUpdatedEventHandler>();
+        
         return services;
     }
 }
