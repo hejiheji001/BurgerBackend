@@ -66,17 +66,11 @@ public class Startup
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
     {
-        var pathBase = Configuration["PATH_BASE"];
-        if (!string.IsNullOrEmpty(pathBase))
-        {
-            app.UsePathBase(pathBase);
-        }
-
         app.UseSwagger()
             .UseSwaggerUI(setup =>
             {
                 setup.SwaggerEndpoint(
-                    $"{(!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty)}/swagger/v1/swagger.json",
+                    $"/swagger/v1/swagger.json",
                     "Review.API V1");
                 setup.OAuthClientId("review");
                 setup.OAuthAppName("Review Swagger UI");
@@ -135,7 +129,7 @@ public class Startup
 
     private void ConfigureAuthService(IServiceCollection services)
     {
-        // prevent from mapping "sub" claim to nameidentifier.
+        // prevent from mapping "sub" claim to name identifier.
         JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Remove("sub");
 
         var identityUrl = Configuration.GetValue<string>("IdentityUrl");
