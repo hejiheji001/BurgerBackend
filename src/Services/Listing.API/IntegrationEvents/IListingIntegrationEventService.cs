@@ -1,4 +1,4 @@
-﻿namespace Listing.API.Events;
+﻿namespace Listing.API.IntegrationEvents;
 
 public interface IListingIntegrationEventService
 {

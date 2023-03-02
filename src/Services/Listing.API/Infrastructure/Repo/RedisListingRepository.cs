@@ -1,10 +1,10 @@
-namespace Listing.API.Infra.Repo;
+namespace Listing.API.Infrastructure.Repo;
 
 public class RedisListingRepository : IListingRepository
 {
+    private readonly IDatabase _database;
     private readonly ILogger<RedisListingRepository> _logger;
     private readonly ConnectionMultiplexer _redis;
-    private readonly IDatabase _database;
 
     public RedisListingRepository(ILoggerFactory loggerFactory, ConnectionMultiplexer redis)
     {
@@ -30,10 +30,7 @@ public class RedisListingRepository : IListingRepository
     {
         var data = await _database.StringGetAsync(searchId);
 
-        if (data.IsNullOrEmpty)
-        {
-            return null;
-        }
+        if (data.IsNullOrEmpty) return null;
 
         return JsonSerializer.Deserialize<ListingGroup>(data, new JsonSerializerOptions
         {

@@ -1,6 +1,6 @@
-﻿namespace Listing.API;
+﻿namespace Review.API;
 
-public class ListingSettings
+public class ReviewSettings
 {
     public string EventBusConnection { get; set; }
     public string ConnectionString { get; set; }

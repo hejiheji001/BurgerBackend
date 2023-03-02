@@ -1,4 +1,8 @@
-namespace Listing.API;
+using System.IdentityModel.Tokens.Jwt;
+using Review.API.Infrastructure.Middlewares;
+using Review.API.Services;
+
+namespace Review.API;
 
 public class Startup
 {
@@ -14,12 +18,21 @@ public class Startup
     {
         services
             .AddCustomMVC(Configuration)
-            .AddCustomDbContext(Configuration)
+            .AddIdentity<ApplicationUser, IdentityRole>();
+
+        // services.AddAspNetIdentity<ApplicationUser>();
+
+        services.AddCustomDbContext(Configuration)
             .AddCustomOptions(Configuration)
             .AddIntegrationServices(Configuration)
             .AddEventBus(Configuration)
             .AddSwagger(Configuration)
             .AddCustomHealthCheck(Configuration);
+
+        ConfigureAuthService(services);
+
+        services.AddTransient<IIdentityService, IdentityService>();
+        services.AddOptions();
 
         var container = new ContainerBuilder();
         container.Populate(services);
@@ -27,25 +40,54 @@ public class Startup
         return new AutofacServiceProvider(container.Build());
     }
 
+    private void ConfigureAuthService(IServiceCollection services)
+    {
+        // prevent from mapping "sub" claim to nameidentifier.
+        JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Remove("sub");
+
+        var identityUrl = Configuration.GetValue<string>("IdentityUrl");
+
+        services.AddAuthentication("Bearer").AddJwtBearer(options =>
+        {
+            options.Authority = identityUrl;
+            options.RequireHttpsMetadata = false;
+            options.Audience = "review";
+            options.TokenValidationParameters.ValidateAudience = false;
+        });
+        
+        services.AddAuthorization(options =>
+        {
+            options.AddPolicy("ApiScope", policy =>
+            {
+                policy.RequireAuthenticatedUser();
+                policy.RequireClaim("scope", "review");
+            });
+        });
+    }
+
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
     {
+        var pathBase = Configuration["PATH_BASE"];
+        if (!string.IsNullOrEmpty(pathBase))
+        {
+            app.UsePathBase(pathBase);
+        }
+
         if (env.IsDevelopment())
         {
             app.UseDeveloperExceptionPage();
             app.UseSwagger();
-            app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "List.API v1"));
+            app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", Program.AppName + " v1"));
         }
 
         app.UseRouting();
-
         app.UseCors("CorsPolicy");
-
         app.UseEndpoints(endpoints =>
         {
             endpoints.MapDefaultControllerRoute();
             endpoints.MapControllers();
-            endpoints.MapHealthChecks("/hc", new HealthCheckOptions()
+            endpoints.MapHealthChecks("/hc", new HealthCheckOptions
             {
                 Predicate = _ => true,
                 ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
@@ -57,8 +99,7 @@ public class Startup
         });
 
         var eventBus = app.ApplicationServices.GetRequiredService<IEventBus>();
-        eventBus.Subscribe<PlaceStatusChangedToOpenEvent, PlaceStatusChangedToOpenEventHandler>();
-        // eventBus.Subscribe<PlaceStatusChangedToCloseEvent, PlaceStatusChangedToCloseEventHandler>();
+        eventBus.Subscribe<PlaceReviewUpdatedEvent, PlaceReviewUpdatedEventHandler>();
     }
 }
 
@@ -67,17 +108,13 @@ public static class CustomExtensionMethods
     public static IServiceCollection AddCustomMVC(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddControllers()
-            .AddJsonOptions(options =>
-            {
-                options.JsonSerializerOptions.WriteIndented = true;
-                options.JsonSerializerOptions.Converters.Add(new NetTopologySuite.IO.Converters.GeoJsonConverterFactory());
-            });
+            .AddJsonOptions(options => { options.JsonSerializerOptions.WriteIndented = true; });
 
         services.AddCors(options =>
         {
             options.AddPolicy("CorsPolicy",
                 builder => builder
-                    .SetIsOriginAllowed((host) => true)
+                    .SetIsOriginAllowed(host => true)
                     .AllowAnyMethod()
                     .AllowAnyHeader()
                     .AllowCredentials());
@@ -85,6 +122,7 @@ public static class CustomExtensionMethods
 
         return services;
     }
+
     public static IServiceCollection AddCustomHealthCheck(this IServiceCollection services,
         IConfiguration configuration)
     {
@@ -94,59 +132,54 @@ public static class CustomExtensionMethods
             .AddCheck("self", () => HealthCheckResult.Healthy())
             .AddSqlServer(
                 configuration["ConnectionString"],
-                name: "ListingDB-check",
-                tags: new string[] { "listingdb" });
+                name: "ReviewDB-check",
+                tags: new[] { "reviewdb" });
 
         hcBuilder.AddRedis(
             configuration["ConnectionString"],
-            name: "redis-check",
-            tags: new string[] { "redis" });
+            "redis-check",
+            tags: new[] { "redis" });
 
         hcBuilder.AddRabbitMQ(
             $"amqp://{configuration["EventBusConnection"]}",
-            name: "listing-rabbitmqbus-check",
-            tags: new string[] { "rabbitmqbus" });
+            name: "review-rabbitmqbus-check",
+            tags: new[] { "rabbitmqbus" });
 
         return services;
     }
+
     public static IServiceCollection AddCustomDbContext(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddDbContext<ListingContext>(options =>
-                {
-                    Console.WriteLine(configuration["ConnectionString"]);
-                    options.UseSqlServer(configuration["ConnectionString"],
-                        sqlOptions =>
-                        {
-                            sqlOptions.MigrationsAssembly(typeof(Startup).GetTypeInfo().Assembly.GetName().Name);
-                            //Configuring Connection Resiliency: https://docs.microsoft.com/en-us/ef/core/miscellaneous/connection-resiliency 
-                            sqlOptions.EnableRetryOnFailure(maxRetryCount: 15, maxRetryDelay: TimeSpan.FromSeconds(30),
-                                errorNumbersToAdd: null);
-                            sqlOptions.UseNetTopologySuite();
-                            
-                            //https://github.com/dotnet/efcore/issues/24507
-                            //https://github.com/ErikEJ/EFCore.SqlServer.DateOnlyTimeOnly
-                            sqlOptions.UseDateOnlyTimeOnly();
-                        });
-                }
-            ).AddDbContext<IntegrationEventLogContext>(options =>
-                {
-                    options.UseSqlServer(configuration["ConnectionString"],
-                        sqlServerOptionsAction: sqlOptions =>
-                        {
-                            sqlOptions.MigrationsAssembly(typeof(Startup).GetTypeInfo().Assembly.GetName().Name);
-                            //Configuring Connection Resiliency: https://docs.microsoft.com/en-us/ef/core/miscellaneous/connection-resiliency 
-                            sqlOptions.EnableRetryOnFailure(maxRetryCount: 15, maxRetryDelay: TimeSpan.FromSeconds(30),
-                                errorNumbersToAdd: null);
-                        });
-                }
-            );
+        services.AddDbContext<ReviewContext>(options =>
+            {
+                options.UseSqlServer(configuration["ConnectionString"],
+                    sqlOptions =>
+                    {
+                        sqlOptions.MigrationsAssembly(typeof(Startup).GetTypeInfo().Assembly.GetName().Name);
+                        //Configuring Connection Resiliency: https://docs.microsoft.com/en-us/ef/core/miscellaneous/connection-resiliency 
+                        sqlOptions.EnableRetryOnFailure(15, TimeSpan.FromSeconds(30),
+                            null);
+                    });
+            }
+        ).AddDbContext<IntegrationEventLogContext>(options =>
+            {
+                options.UseSqlServer(configuration["ConnectionString"],
+                    sqlOptions =>
+                    {
+                        sqlOptions.MigrationsAssembly(typeof(Startup).GetTypeInfo().Assembly.GetName().Name);
+                        //Configuring Connection Resiliency: https://docs.microsoft.com/en-us/ef/core/miscellaneous/connection-resiliency 
+                        sqlOptions.EnableRetryOnFailure(15, TimeSpan.FromSeconds(30),
+                            null);
+                    });
+            }
+        );
 
         return services;
     }
 
     public static IServiceCollection AddCustomOptions(this IServiceCollection services, IConfiguration configuration)
     {
-        services.Configure<ListingSettings>(configuration);
+        services.Configure<ReviewSettings>(configuration);
         services.Configure<ApiBehaviorOptions>(options =>
         {
             options.InvalidModelStateResponseFactory = context =>
@@ -174,10 +207,30 @@ public static class CustomExtensionMethods
         {
             options.SwaggerDoc("v1", new OpenApiInfo
             {
-                Title = "Burger Backend - Listing HTTP API",
+                Title = "Burger Backend - " + Program.AppName,
                 Version = "v1",
-                Description = "The Listing Microservice HTTP API. This is a Data-Driven/CRUD microservice"
+                Description = "The Review Microservice HTTP API"
             });
+
+            options.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme
+            {
+                Type = SecuritySchemeType.OAuth2,
+                Flows = new OpenApiOAuthFlows()
+                {
+                    Implicit = new OpenApiOAuthFlow()
+                    {
+                        AuthorizationUrl =
+                            new Uri($"{configuration.GetValue<string>("IdentityUrlExternal")}/connect/authorize"),
+                        TokenUrl = new Uri($"{configuration.GetValue<string>("IdentityUrlExternal")}/connect/token"),
+                        Scopes = new Dictionary<string, string>()
+                        {
+                            { "review", "Review API" }
+                        }
+                    }
+                }
+            });
+
+            options.OperationFilter<AuthorizeCheckOperationFilter>();
         });
 
         return services;
@@ -189,32 +242,26 @@ public static class CustomExtensionMethods
         services.AddTransient<Func<DbConnection, IIntegrationEventLogService>>(sp =>
             c => new IntegrationEventLogService(c));
 
-        services.AddTransient<IListingIntegrationEventService, ListingIntegrationEventService>()
+        services.AddTransient<IReviewIntegrationEventService, ReviewIntegrationEventService>()
             .AddSingleton<IRabbitMQPersistentConnection>(sp =>
             {
                 var logger = sp.GetRequiredService<ILogger<DefaultRabbitMQPersistentConnection>>();
 
-                var factory = new ConnectionFactory()
+                var factory = new ConnectionFactory
                 {
                     HostName = configuration["EventBusConnection"],
                     DispatchConsumersAsync = true
                 };
 
                 if (!string.IsNullOrEmpty(configuration["EventBusUserName"]))
-                {
                     factory.UserName = configuration["EventBusUserName"];
-                }
 
                 if (!string.IsNullOrEmpty(configuration["EventBusPassword"]))
-                {
                     factory.Password = configuration["EventBusPassword"];
-                }
 
                 var retryCount = 5;
                 if (!string.IsNullOrEmpty(configuration["EventBusRetryCount"]))
-                {
                     retryCount = int.Parse(configuration["EventBusRetryCount"]);
-                }
 
                 return new DefaultRabbitMQPersistentConnection(factory, logger, retryCount);
             });
@@ -234,16 +281,14 @@ public static class CustomExtensionMethods
 
             var retryCount = 5;
             if (!string.IsNullOrEmpty(configuration["EventBusRetryCount"]))
-            {
                 retryCount = int.Parse(configuration["EventBusRetryCount"]);
-            }
 
             return new EventBusRabbitMQ.EventBusRabbitMQ(rabbitMQPersistentConnection, logger, iLifetimeScope,
                 eventBusSubcriptionsManager, subscriptionClientName, retryCount);
         });
 
         services.AddSingleton<IEventBusSubscriptionsManager, InMemoryEventBusSubscriptionsManager>();
-        services.AddTransient<PlaceStatusChangedToOpenEventHandler>();
+        services.AddTransient<PlaceReviewUpdatedEventHandler>();
 
         return services;
     }

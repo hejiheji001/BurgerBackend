@@ -1,24 +1,26 @@
-﻿namespace Listing.API.IntegrationEvents.EventHandlers;
+﻿namespace Review.API.IntegrationEvents.EventHandlers;
 
-public class PlaceStatusChangedToOpenEventHandler : IIntegrationEventHandler<PlaceStatusChangedToOpenEvent>
+public class PlaceReviewUpdatedEventHandler : IIntegrationEventHandler<PlaceReviewUpdatedEvent>
 {
-    private readonly ListingContext _listingContext;
-    private readonly ILogger<PlaceStatusChangedToOpenEventHandler> _logger;
+    private readonly ILogger<PlaceReviewUpdatedEventHandler> _logger;
+    private readonly ReviewContext _reviewContext;
 
-    public PlaceStatusChangedToOpenEventHandler(
-        ListingContext listingContext,
-        ILogger<PlaceStatusChangedToOpenEventHandler> logger)
+    public PlaceReviewUpdatedEventHandler(
+        ReviewContext ReviewContext,
+        ILogger<PlaceReviewUpdatedEventHandler> logger)
     {
-        _listingContext = listingContext;
-        _logger = logger ?? throw new System.ArgumentNullException(nameof(logger));
+        _reviewContext = ReviewContext;
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task Handle(PlaceStatusChangedToOpenEvent @event)
+    public async Task Handle(PlaceReviewUpdatedEvent @event)
     {
         using (LogContext.PushProperty("IntegrationEventContext", $"{@event.Id}-{Program.AppName}"))
         {
-            _logger.LogInformation("----- Handling integration event: {IntegrationEventId} at {AppName} - ({@IntegrationEvent})", @event.Id, Program.AppName, @event);
-            await _listingContext.SaveChangesAsync();
+            _logger.LogInformation(
+                "----- Handling integration event: {IntegrationEventId} at {AppName} - ({@IntegrationEvent})",
+                @event.Id, Program.AppName, @event);
+            await _reviewContext.SaveChangesAsync();
         }
     }
 }

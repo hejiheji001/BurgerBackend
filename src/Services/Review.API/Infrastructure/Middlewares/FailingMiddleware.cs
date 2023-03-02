@@ -1,6 +1,6 @@
-﻿namespace Basket.API.Infrastructure.Middlewares;
+﻿using ILogger = Microsoft.Extensions.Logging.ILogger;
 
-using Microsoft.Extensions.Logging;
+namespace Review.API.Infrastructure.Middlewares;
 
 public class FailingMiddleware
 {

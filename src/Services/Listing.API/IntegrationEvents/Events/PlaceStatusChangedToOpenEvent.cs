@@ -1,14 +1,11 @@
 ﻿namespace Listing.API.IntegrationEvents.Events;
 
-public record OrderStatusChangedToPaidIntegrationEvent : IntegrationEvent
+public record PlaceStatusChangedToOpenEvent : IntegrationEvent
 {
-    public int OrderId { get; }
-    public IEnumerable<OrderStockItem> OrderStockItems { get; }
-
-    public OrderStatusChangedToPaidIntegrationEvent(int orderId,
-        IEnumerable<OrderStockItem> orderStockItems)
+    public PlaceStatusChangedToOpenEvent(int listingItemId)
     {
-        OrderId = orderId;
-        OrderStockItems = orderStockItems;
+        ListingItemId = listingItemId;
     }
+
+    public int ListingItemId { get; }
 }

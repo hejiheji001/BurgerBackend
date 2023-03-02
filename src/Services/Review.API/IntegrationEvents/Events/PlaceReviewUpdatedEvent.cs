@@ -1,13 +1,11 @@
-﻿using EventBus.Events;
+﻿namespace Review.API.IntegrationEvents.Events;
 
-namespace Review.API.IntegrationEvents.Events;
-
-public record ReviewUpdateEvent : IntegrationEvent
+public record PlaceReviewUpdatedEvent : IntegrationEvent
 {
-    public int ListingItemId { get; }
-
-    public ReviewUpdateEvent(int listingItemId)
+    public PlaceReviewUpdatedEvent(int listingItemId)
     {
         ListingItemId = listingItemId;
     }
+
+    public int ListingItemId { get; }
 }

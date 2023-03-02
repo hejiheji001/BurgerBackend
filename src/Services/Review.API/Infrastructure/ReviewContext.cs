@@ -1,40 +1,30 @@
-﻿namespace Review.API.Infrastructure;
+﻿using Review.API.Model;
 
-public class ListingContext : DbContext
+namespace Review.API.Infrastructure;
+
+public class ReviewContext : DbContext
 {
-    public ListingContext(DbContextOptions<ListingContext> options) : base(options)
+    public ReviewContext(DbContextOptions<ReviewContext> options) : base(options)
     {
     }
 
-    public DbSet<ListingItem> ListingItems { get; set; }
+    public DbSet<ReviewItem> ReviewItems { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
-        var listing = builder.Entity<ListingItem>();
-        listing.ToTable("Listing");
-        listing.Property(ci => ci.Id).IsRequired();
-        listing.Property(ci => ci.Name).IsRequired().HasMaxLength(50);
-        listing.Property(ci => ci.Description).IsRequired().HasMaxLength(200);
-        
-        //By default, spatial properties are mapped to geography columns in SQL Server.
-        //To use geometry, configure the column type in your model.
-        //https://learn.microsoft.com/en-us/ef/core/providers/sql-server/spatial
-        listing.Property(ci => ci.Location).HasColumnType("geometry").IsRequired();
-        listing.Property(ci => ci.OpeningTimeStart).IsRequired();
-        listing.Property(ci => ci.OpeningTimeEnd).IsRequired();
-        listing.Property(ci => ci.ImageUrl).IsRequired(false);
-        listing.Ignore(ci => ci.IsOpen);
-    }
-
-    //https://github.com/dotnet/efcore/issues/18058
-    //https://github.com/NetTopologySuite/NetTopologySuite/issues/349
-    //https://learn.microsoft.com/en-us/ef/core/cli/dbcontext-creation?tabs=dotnet-core-cli
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        base.OnConfiguring(optionsBuilder);
-        optionsBuilder.UseSqlServer(
-            "Server=tcp:127.0.0.1,6433;Initial Catalog=BurgerBackend.ListingDb;User Id=sa;Password=Pass@word;Encrypt=False;",
-            x => x.UseNetTopologySuite());
+        var reviews = builder.Entity<ReviewItem>();
+        reviews.ToTable("Review");
+        reviews.Property(ci => ci.Id).IsRequired();
+        reviews.Property(ci => ci.UserId).IsRequired();
+        reviews.Property(ci => ci.ListingItemId).IsRequired();
+        reviews.Property(ci => ci.TextureScore).IsRequired();
+        reviews.Property(ci => ci.TextureScore).IsRequired();
+        reviews.Property(ci => ci.VisualScore).IsRequired();
+        reviews.Property(ci => ci.Comment).IsRequired().HasMaxLength(200);
+        reviews.Property(ci => ci.CreationTime).IsRequired();
+        reviews.Property(ci => ci.ModificationTime).IsRequired();
+        reviews.Property(ci => ci.ImageUrl).IsRequired(false);
+        reviews.Ignore(ci => ci.AverageScore);
     }
 }

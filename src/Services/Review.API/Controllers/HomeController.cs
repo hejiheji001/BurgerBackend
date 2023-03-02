@@ -1,4 +1,4 @@
-namespace Listing.API.Controllers;
+namespace Review.API.Controllers;
 
 public class HomeController : Controller
 {

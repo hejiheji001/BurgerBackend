@@ -11,12 +11,12 @@ RUN curl -fsSL https://deb.nodesource.com/setup_14.x | bash - \
         nodejs \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /src
-COPY ["src/Web/WebSPA/WebSPA.csproj", "src/Web/WebSPA/"]
-RUN dotnet restore "src/Web/WebSPA/WebSPA.csproj"
+FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
+
+COPY WebSPA.csproj .
+RUN dotnet restore
 COPY . .
-WORKDIR "/src/src/Web/WebSPA"
-RUN dotnet build "WebSPA.csproj" -c Release -o /app/build
+RUN dotnet publish -c release -o /app
 
 FROM build AS publish
 RUN dotnet publish "WebSPA.csproj" -c Release -o /app/publish

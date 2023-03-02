@@ -1,4 +1,6 @@
-﻿namespace Basket.API.Infrastructure.Middlewares;
+﻿using Review.API.Infrastructure.Middlewares;
+
+namespace Review.API.Infrastructure.Exceptions;
 
 public static class FailingMiddlewareAppBuilderExtensions
 {

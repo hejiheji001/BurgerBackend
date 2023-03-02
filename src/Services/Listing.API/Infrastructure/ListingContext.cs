@@ -1,23 +1,30 @@
-﻿
-namespace Listing.API.Infra;
+﻿namespace Listing.API.Infrastructure;
 
 public class ListingContext : DbContext
 {
     public ListingContext(DbContextOptions<ListingContext> options) : base(options)
     {
     }
-    
+
     public DbSet<ListingItem> ListingItems { get; set; }
-}
 
 
-public class ListingContextDesignFactory : IDesignTimeDbContextFactory<ListingContext>
-{
-    public ListingContext CreateDbContext(string[] args)
+    protected override void OnModelCreating(ModelBuilder builder)
     {
-        var optionsBuilder = new DbContextOptionsBuilder<ListingContext>()
-            .UseSqlServer("Server=.;Initial Catalog=Microsoft.eShopOnContainers.Services.CatalogDb;Integrated Security=true");
+        var listing = builder.Entity<ListingItem>();
+        listing.ToTable("Listing");
+        listing.Property(ci => ci.Id).IsRequired();
+        listing.Property(ci => ci.Name).IsRequired().HasMaxLength(50);
+        listing.Property(ci => ci.Description).IsRequired().HasMaxLength(200);
 
-        return new ListingContext(optionsBuilder.Options);
+        //By default, spatial properties are mapped to geography columns in SQL Server.
+        //To use geometry, configure the column type in your model.
+        //https://learn.microsoft.com/en-us/ef/core/providers/sql-server/spatial
+        listing.Property(ci => ci.Location).HasColumnType("geometry").IsRequired();
+        listing.Property(ci => ci.OpeningTimeStart).IsRequired();
+        listing.Property(ci => ci.OpeningTimeEnd).IsRequired();
+        listing.Property(ci => ci.ImageUrl).IsRequired(false);
+        listing.Ignore(ci => ci.IsOpen);
+        listing.Ignore(ci => ci.Distance);
     }
 }

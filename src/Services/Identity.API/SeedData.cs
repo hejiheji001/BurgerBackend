@@ -1,11 +1,10 @@
-using System.Threading.Tasks;
-using System;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
-namespace Microsoft.eShopOnContainers.Services.Identity.API;
+namespace Identity.API;
 
 public class SeedData
 {
-    public static async Task EnsureSeedData(IServiceScope scope, IConfiguration configuration, Microsoft.Extensions.Logging.ILogger logger)
+    public static async Task EnsureSeedData(IServiceScope scope, IConfiguration configuration, ILogger logger)
     {
         var retryPolicy = CreateRetryPolicy(configuration, logger);
         var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -42,10 +41,7 @@ public class SeedData
 
                 var result = userMgr.CreateAsync(alice, "Pass123$").Result;
 
-                if (!result.Succeeded)
-                {
-                    throw new Exception(result.Errors.First().Description);
-                }
+                if (!result.Succeeded) throw new Exception(result.Errors.First().Description);
 
                 logger.LogDebug("alice created");
             }
@@ -81,10 +77,7 @@ public class SeedData
 
                 var result = await userMgr.CreateAsync(bob, "Pass123$");
 
-                if (!result.Succeeded)
-                {
-                    throw new Exception(result.Errors.First().Description);
-                }
+                if (!result.Succeeded) throw new Exception(result.Errors.First().Description);
 
                 logger.LogDebug("bob created");
             }
@@ -95,7 +88,7 @@ public class SeedData
         });
     }
 
-    private static AsyncPolicy CreateRetryPolicy(IConfiguration configuration, Microsoft.Extensions.Logging.ILogger logger)
+    private static AsyncPolicy CreateRetryPolicy(IConfiguration configuration, ILogger logger)
     {
         var retryMigrations = false;
         bool.TryParse(configuration["RetryMigrations"], out retryMigrations);
@@ -103,21 +96,18 @@ public class SeedData
         // Only use a retry policy if configured to do so.
         // When running in an orchestrator/K8s, it will take care of restarting failed services.
         if (retryMigrations)
-        {
-            return Policy.Handle<Exception>().
-                WaitAndRetryForeverAsync(
-                    sleepDurationProvider: retry => TimeSpan.FromSeconds(5),
-                    onRetry: (exception, retry, timeSpan) =>
-                    {
-                        logger.LogWarning(
-                            exception,
-                            "Exception {ExceptionType} with message {Message} detected during database migration (retry attempt {retry})",
-                            exception.GetType().Name,
-                            exception.Message,
-                            retry);
-                    }
-                );
-        }
+            return Policy.Handle<Exception>().WaitAndRetryForeverAsync(
+                retry => TimeSpan.FromSeconds(5),
+                (exception, retry, timeSpan) =>
+                {
+                    logger.LogWarning(
+                        exception,
+                        "Exception {ExceptionType} with message {Message} detected during database migration (retry attempt {retry})",
+                        exception.GetType().Name,
+                        exception.Message,
+                        retry);
+                }
+            );
 
         return Policy.NoOpAsync();
     }

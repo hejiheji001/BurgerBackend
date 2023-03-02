@@ -1,14 +1,10 @@
-﻿namespace Microsoft.eShopOnContainers.Services.Identity.API.Devspaces
+﻿namespace Identity.API.Devspaces;
+
+internal static class IdentityDevspacesBuilderExtensions
 {
-    static class IdentityDevspacesBuilderExtensions
+    public static IIdentityServerBuilder AddDevspacesIfNeeded(this IIdentityServerBuilder builder, bool useDevspaces)
     {
-        public static IIdentityServerBuilder AddDevspacesIfNeeded(this IIdentityServerBuilder builder, bool useDevspaces)
-        {
-            if (useDevspaces)
-            {
-                builder.AddRedirectUriValidator<DevspacesRedirectUriValidator>();
-            }
-            return builder;
-        }
+        if (useDevspaces) builder.AddRedirectUriValidator<DevspacesRedirectUriValidator>();
+        return builder;
     }
 }

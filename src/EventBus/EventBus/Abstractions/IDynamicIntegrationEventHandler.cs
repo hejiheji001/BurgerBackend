@@ -1,4 +1,4 @@
-﻿namespace Microsoft.eShopOnContainers.BuildingBlocks.EventBus.Abstractions;
+﻿namespace EventBus.Abstractions;
 
 public interface IDynamicIntegrationEventHandler
 {

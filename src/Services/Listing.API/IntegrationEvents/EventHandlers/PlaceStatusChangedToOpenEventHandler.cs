@@ -1,35 +1,26 @@
-﻿namespace Microsoft.eShopOnContainers.Services.Catalog.API.IntegrationEvents.EventHandling;
+﻿namespace Listing.API.IntegrationEvents.EventHandlers;
 
-public class OrderStatusChangedToPaidIntegrationEventHandler :
-    IIntegrationEventHandler<OrderStatusChangedToPaidIntegrationEvent>
+public class PlaceStatusChangedToOpenEventHandler : IIntegrationEventHandler<PlaceStatusChangedToOpenEvent>
 {
-    private readonly CatalogContext _catalogContext;
-    private readonly ILogger<OrderStatusChangedToPaidIntegrationEventHandler> _logger;
+    private readonly ListingContext _listingContext;
+    private readonly ILogger<PlaceStatusChangedToOpenEventHandler> _logger;
 
-    public OrderStatusChangedToPaidIntegrationEventHandler(
-        CatalogContext catalogContext,
-        ILogger<OrderStatusChangedToPaidIntegrationEventHandler> logger)
+    public PlaceStatusChangedToOpenEventHandler(
+        ListingContext listingContext,
+        ILogger<PlaceStatusChangedToOpenEventHandler> logger)
     {
-        _catalogContext = catalogContext;
-        _logger = logger ?? throw new System.ArgumentNullException(nameof(logger));
+        _listingContext = listingContext;
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task Handle(OrderStatusChangedToPaidIntegrationEvent @event)
+    public async Task Handle(PlaceStatusChangedToOpenEvent @event)
     {
         using (LogContext.PushProperty("IntegrationEventContext", $"{@event.Id}-{Program.AppName}"))
         {
-            _logger.LogInformation("----- Handling integration event: {IntegrationEventId} at {AppName} - ({@IntegrationEvent})", @event.Id, Program.AppName, @event);
-
-            //we're not blocking stock/inventory
-            foreach (var orderStockItem in @event.OrderStockItems)
-            {
-                var catalogItem = _catalogContext.CatalogItems.Find(orderStockItem.ProductId);
-
-                catalogItem.RemoveStock(orderStockItem.Units);
-            }
-
-            await _catalogContext.SaveChangesAsync();
-
+            _logger.LogInformation(
+                "----- Handling integration event: {IntegrationEventId} at {AppName} - ({@IntegrationEvent})",
+                @event.Id, Program.AppName, @event);
+            await _listingContext.SaveChangesAsync();
         }
     }
 }

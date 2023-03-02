@@ -1,4 +1,4 @@
-﻿namespace Microsoft.eShopOnContainers.Services.Basket.API.Services;
+﻿namespace Review.API.Services;
 
 public interface IIdentityService
 {

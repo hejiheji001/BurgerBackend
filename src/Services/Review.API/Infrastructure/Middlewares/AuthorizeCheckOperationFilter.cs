@@ -1,4 +1,7 @@
-﻿namespace Basket.API.Infrastructure.Filters;
+﻿using Microsoft.AspNetCore.Authorization;
+using Swashbuckle.AspNetCore.SwaggerGen;
+
+namespace Review.API.Infrastructure.Middlewares;
 
 public class AuthorizeCheckOperationFilter : IOperationFilter
 {
@@ -22,7 +25,7 @@ public class AuthorizeCheckOperationFilter : IOperationFilter
             {
                 new()
                 {
-                    [ oAuthScheme ] = new [] { "basketapi" }
+                    [ oAuthScheme ] = new [] { "reviewapi" }
                 }
             };
     }

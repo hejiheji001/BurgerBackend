@@ -1,4 +1,4 @@
-﻿namespace Basket.API.Infrastructure.Middlewares;
+﻿namespace Review.API.Infrastructure.Middlewares;
 
 public class FailingOptions
 {

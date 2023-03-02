@@ -1,13 +1,11 @@
-﻿using System.Transactions;
-
-namespace Listing.API.Events;
+﻿namespace Listing.API.IntegrationEvents;
 
 public class ListingIntegrationEventService : IListingIntegrationEventService, IDisposable
 {
-    private readonly Func<DbConnection, IIntegrationEventLogService> _integrationEventLogServiceFactory;
     private readonly IEventBus _eventBus;
-    private readonly ListingContext _listingContext;
     private readonly IIntegrationEventLogService _eventLogService;
+    private readonly Func<DbConnection, IIntegrationEventLogService> _integrationEventLogServiceFactory;
+    private readonly ListingContext _listingContext;
     private readonly ILogger<ListingIntegrationEventService> _logger;
     private volatile bool disposedValue;
 
@@ -19,16 +17,26 @@ public class ListingIntegrationEventService : IListingIntegrationEventService, I
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _listingContext = listingContext ?? throw new ArgumentNullException(nameof(listingContext));
-        _integrationEventLogServiceFactory = integrationEventLogServiceFactory ?? throw new ArgumentNullException(nameof(integrationEventLogServiceFactory));
+        _integrationEventLogServiceFactory = integrationEventLogServiceFactory ??
+                                             throw new ArgumentNullException(nameof(integrationEventLogServiceFactory));
         _eventBus = eventBus ?? throw new ArgumentNullException(nameof(eventBus));
         _eventLogService = _integrationEventLogServiceFactory(_listingContext.Database.GetDbConnection());
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        // https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1816
+        GC.SuppressFinalize(this);
     }
 
     public async Task PublishThroughEventBusAsync(IntegrationEvent evt)
     {
         try
         {
-            _logger.LogInformation("----- Publishing integration event: {IntegrationEventId_published} from {AppName} - ({@IntegrationEvent})", evt.Id, Program.AppName, evt);
+            _logger.LogInformation(
+                "----- Publishing integration event: {IntegrationEventId_published} from {AppName} - ({@IntegrationEvent})",
+                evt.Id, Program.AppName, evt);
 
             await _eventLogService.MarkEventAsInProgressAsync(evt.Id);
             _eventBus.Publish(evt);
@@ -36,14 +44,17 @@ public class ListingIntegrationEventService : IListingIntegrationEventService, I
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "ERROR Publishing integration event: {IntegrationEventId} from {AppName} - ({@IntegrationEvent})", evt.Id, Program.AppName, evt);
+            _logger.LogError(ex,
+                "ERROR Publishing integration event: {IntegrationEventId} from {AppName} - ({@IntegrationEvent})",
+                evt.Id, Program.AppName, evt);
             await _eventLogService.MarkEventAsFailedAsync(evt.Id);
         }
     }
 
     public async Task SaveEventAsync(IntegrationEvent evt)
     {
-        _logger.LogInformation("----- ListingIntegrationEventService - Saving changes and integrationEvent: {IntegrationEventId}", evt.Id);
+        _logger.LogInformation(
+            "----- ListingIntegrationEventService - Saving changes and integrationEvent: {IntegrationEventId}", evt.Id);
 
         //Use of an EF Core resiliency strategy when using multiple DbContexts within an explicit BeginTransaction():
         //See: https://docs.microsoft.com/en-us/ef/core/miscellaneous/connection-resiliency            
@@ -60,19 +71,9 @@ public class ListingIntegrationEventService : IListingIntegrationEventService, I
     {
         if (!disposedValue)
         {
-            if (disposing)
-            {
-                (_eventLogService as IDisposable)?.Dispose();
-            }
+            if (disposing) (_eventLogService as IDisposable)?.Dispose();
 
             disposedValue = true;
         }
-    }
-
-    public void Dispose()
-    {
-        Dispose(disposing: true);
-        // https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1816
-        GC.SuppressFinalize(this);
     }
 }

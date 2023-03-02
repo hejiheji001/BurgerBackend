@@ -1,4 +1,4 @@
-namespace Listing.API;
+namespace WebSPA;
 
 public class WeatherForecast
 {

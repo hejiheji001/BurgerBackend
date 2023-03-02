@@ -1,8 +1,6 @@
-﻿using EventBus.Events;
+﻿namespace Review.API.IntegrationEvents;
 
-namespace Listing.API.IntegrationEvents;
-
-public interface IListingIntegrationEventService
+public interface IReviewIntegrationEventService
 {
     Task SaveEventAsync(IntegrationEvent evt);
     Task PublishThroughEventBusAsync(IntegrationEvent evt);

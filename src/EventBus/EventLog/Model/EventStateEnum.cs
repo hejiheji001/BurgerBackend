@@ -1,4 +1,4 @@
-﻿namespace Microsoft.eShopOnContainers.BuildingBlocks.IntegrationEventLogEF;
+﻿namespace EventLog.Model;
 
 public enum EventStateEnum
 {
@@ -7,4 +7,3 @@ public enum EventStateEnum
     Published = 2,
     PublishedFailed = 3
 }
-

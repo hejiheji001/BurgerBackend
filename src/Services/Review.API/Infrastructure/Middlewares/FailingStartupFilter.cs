@@ -1,4 +1,6 @@
-﻿namespace Basket.API.Infrastructure.Middlewares;
+﻿using Review.API.Infrastructure.Exceptions;
+
+namespace Review.API.Infrastructure.Middlewares;
 
 public class FailingStartupFilter : IStartupFilter
 {
