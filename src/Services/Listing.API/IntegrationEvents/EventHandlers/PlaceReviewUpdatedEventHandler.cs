@@ -1,19 +1,19 @@
 ﻿namespace Listing.API.IntegrationEvents.EventHandlers;
 
-public class PlaceStatusChangedToOpenEventHandler : IIntegrationEventHandler<PlaceStatusChangedToOpenEvent>
+public class PlaceReviewUpdatedEventHandler : IIntegrationEventHandler<PlaceReviewUpdatedEvent>
 {
     private readonly ListingContext _listingContext;
-    private readonly ILogger<PlaceStatusChangedToOpenEventHandler> _logger;
+    private readonly ILogger<PlaceReviewUpdatedEventHandler> _logger;
 
-    public PlaceStatusChangedToOpenEventHandler(
+    public PlaceReviewUpdatedEventHandler(
         ListingContext listingContext,
-        ILogger<PlaceStatusChangedToOpenEventHandler> logger)
+        ILogger<PlaceReviewUpdatedEventHandler> logger)
     {
         _listingContext = listingContext;
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task Handle(PlaceStatusChangedToOpenEvent @event)
+    public async Task Handle(PlaceReviewUpdatedEvent @event)
     {
         using (LogContext.PushProperty("IntegrationEventContext", $"{@event.Id}-{Program.AppName}"))
         {

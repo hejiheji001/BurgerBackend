@@ -9,7 +9,7 @@ namespace Review.API.Controllers;
 public class ReviewController : ControllerBase
 {
     private readonly ReviewContext _ReviewContext;
-    private readonly IReviewIntegrationEventService _ReviewIntegrationEventService;
+    private readonly IReviewIntegrationEventService _reviewIntegrationEventService;
     private readonly ReviewSettings _settings;
     private readonly IIdentityService _identityService;
 
@@ -17,11 +17,11 @@ public class ReviewController : ControllerBase
     //and ensures that the settings are reloaded if the underlying file changes
     //https://docs.microsoft.com/en-us/aspnet/core/fundamentals/configuration/options?view=aspnetcore-3.1#reload-configuration-data-with-ioptionssnapshot
     public ReviewController(ReviewContext context, IOptionsSnapshot<ReviewSettings> settings, IIdentityService identityService,
-        IReviewIntegrationEventService ReviewIntegrationEventService)
+        IReviewIntegrationEventService reviewIntegrationEventService)
     {
         _ReviewContext = context ?? throw new ArgumentNullException(nameof(context));
-        _ReviewIntegrationEventService = ReviewIntegrationEventService ??
-                                         throw new ArgumentNullException(nameof(ReviewIntegrationEventService));
+        _reviewIntegrationEventService = reviewIntegrationEventService ??
+                                         throw new ArgumentNullException(nameof(reviewIntegrationEventService));
         _settings = settings.Value;
         _identityService = identityService;
         
@@ -82,6 +82,8 @@ public class ReviewController : ControllerBase
     public async Task<ActionResult> CreateReviewItemAsync([FromBody] ReviewItem newReview)
     {
         var userId = _identityService.GetUserIdentity();
+        Console.WriteLine(_identityService == null);
+        
         if (userId == null)
         {
             return Forbid();

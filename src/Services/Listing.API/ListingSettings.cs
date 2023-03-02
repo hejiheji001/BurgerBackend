@@ -4,4 +4,5 @@ public class ListingSettings
 {
     public string EventBusConnection { get; set; }
     public string ConnectionString { get; set; }
+    public string RedisConnectionString { get; set; }
 }

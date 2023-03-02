@@ -45,7 +45,7 @@ public class ListingInitializer
             new()
             {
                 Name = "肯德基(上塘荟餐厅)", Description = "民塘路521号", Location = new Point(114.020779, 22.642474),
-                OpeningTimeStart = new TimeOnly(0, 0, 1), OpeningTimeEnd = new TimeOnly(0, 0)
+                OpeningTimeStart = new TimeOnly(0, 0, 0), OpeningTimeEnd = new TimeOnly(23, 59, 59)
             },
             new()
             {
@@ -56,7 +56,7 @@ public class ListingInitializer
             {
                 Name = "麦当劳(龙胜店)", Description = "和平里花园1期商业一半地下17、18、19,商业一02层",
                 Location = new Point(114.017964, 22.649974),
-                OpeningTimeStart = new TimeOnly(0, 0, 1), OpeningTimeEnd = new TimeOnly(0, 0)
+                OpeningTimeStart = new TimeOnly(0, 0, 0), OpeningTimeEnd = new TimeOnly(23, 59, 59)
             }
         };
     }

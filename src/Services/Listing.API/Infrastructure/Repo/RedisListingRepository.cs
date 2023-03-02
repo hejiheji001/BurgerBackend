@@ -1,3 +1,5 @@
+using NetTopologySuite.IO.Converters;
+
 namespace Listing.API.Infrastructure.Repo;
 
 public class RedisListingRepository : IListingRepository
@@ -34,14 +36,19 @@ public class RedisListingRepository : IListingRepository
 
         return JsonSerializer.Deserialize<ListingGroup>(data, new JsonSerializerOptions
         {
-            PropertyNameCaseInsensitive = true
+            PropertyNameCaseInsensitive = true,
+            Converters = { new GeoJsonConverterFactory() }
         });
     }
 
     public async Task<ListingGroup> UpdateListingGroupAsync(ListingGroup listGroup)
     {
-        var searchId = listGroup.SearchId.ToString();
-        var created = await _database.StringSetAsync(searchId, JsonSerializer.Serialize(listGroup));
+        var searchId = listGroup.SearchId;
+        var created = await _database.StringSetAsync(searchId, JsonSerializer.Serialize(listGroup,
+            new JsonSerializerOptions
+            {
+                Converters = { new GeoJsonConverterFactory() }
+            }));
 
         if (!created)
         {

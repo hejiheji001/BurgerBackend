@@ -1,3 +1,4 @@
+using Listing.API.Services;
 using ProjNet;
 using ProjNet.CoordinateSystems;
 using ProjNet.CoordinateSystems.Transformations;
@@ -11,18 +12,24 @@ public class ListingController : ControllerBase
     private readonly ListingContext _listingContext;
     private readonly IListingIntegrationEventService _listingIntegrationEventService;
     private readonly ListingSettings _settings;
+    private readonly IListingRepository _listingRepository;
+    private readonly IReviewService _reviewService;
+    private readonly ILogger<ListingController> _logger;
 
     //IOptionsSnapshot provides scoped lifetime for the settings object
     //and ensures that the settings are reloaded if the underlying file changes
     //https://docs.microsoft.com/en-us/aspnet/core/fundamentals/configuration/options?view=aspnetcore-3.1#reload-configuration-data-with-ioptionssnapshot
-    public ListingController(ListingContext context, IOptionsSnapshot<ListingSettings> settings,
-        IListingIntegrationEventService listingIntegrationEventService)
+    public ListingController(ILogger<ListingController> logger, ListingContext context, IOptionsSnapshot<ListingSettings> settings,
+        IListingIntegrationEventService listingIntegrationEventService, IReviewService reviewService,
+        IListingRepository listingRepository)
     {
         _listingContext = context ?? throw new ArgumentNullException(nameof(context));
         _listingIntegrationEventService = listingIntegrationEventService ??
                                           throw new ArgumentNullException(nameof(listingIntegrationEventService));
         _settings = settings.Value;
-
+        _reviewService = reviewService;
+        _listingRepository = listingRepository;
+        _logger = logger;
         context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
     }
 
@@ -52,19 +59,6 @@ public class ListingController : ControllerBase
         return Ok(itemsOnPage);
     }
 
-    private async Task<List<ListingItem>> GetItemsByIdsAsync(string? ids)
-    {
-        var numIds = ids.Split(',').Select(id => (Ok: int.TryParse(id, out var x), Value: x));
-
-        if (!numIds.All(nid => nid.Ok)) return new List<ListingItem>();
-
-        var idsToSelect = numIds.Select(id => id.Value);
-
-        var items = await _listingContext.ListingItems.Where(ci => idsToSelect.Contains(ci.Id)).ToListAsync();
-
-        return items;
-    }
-
     [HttpGet]
     [Route("items/{id:int}")]
     [ProducesResponseType((int)HttpStatusCode.NotFound)]
@@ -74,9 +68,91 @@ public class ListingController : ControllerBase
     {
         if (id <= 0) return BadRequest();
 
-        var item = await _listingContext.ListingItems.SingleOrDefaultAsync(ci => ci.Id == id);
+        var item = await GetItemByIdAsync(id);
 
         if (item != null) return item;
+
+        return NotFound();
+    }
+
+    private async Task<ActionResult<ListingItem>> GetItemByIdAsync(int id)
+    {
+        var itemGroup = await _listingRepository.GetListingGroupAsync(id.ToString());
+        ListingItem result;
+        if (itemGroup == null)
+        {
+            result = await _listingContext.ListingItems.SingleOrDefaultAsync(ci => ci.Id == id);
+            if (result != null)
+            {
+                await _listingRepository.UpdateListingGroupAsync(new ListingGroup
+                {
+                    SearchId = id.ToString(),
+                    Items = new List<ListingItem> { result }
+                });
+            }
+            _logger.LogInformation("Listing item with id {Id} was not found in cache. Retrieved from database.", id);
+        }
+        else
+        {
+            result = itemGroup.Items.FirstOrDefault();
+            _logger.LogInformation("Listing item with id {Id} was found in cache.", id);
+        }
+
+        return result;
+    }
+
+    private async Task<List<ListingItem>> GetItemsByIdsAsync(string? ids)
+    {
+        var numIds = ids.Split(',').Select(id => (Ok: int.TryParse(id, out var x), Value: x));
+
+        if (!numIds.All(nid => nid.Ok)) return new List<ListingItem>();
+
+        var idsToSelect = numIds.Select(id => id.Value);
+        var idsStr = string.Join("", idsToSelect.OrderDescending());
+        
+        List<ListingItem> result;
+        var itemGroup = await _listingRepository.GetListingGroupAsync(idsStr);
+        if (itemGroup == null)
+        {
+            result = await _listingContext.ListingItems.Where(ci => idsToSelect.Contains(ci.Id)).ToListAsync();
+            if (result.Any())
+            {
+                await _listingRepository.UpdateListingGroupAsync(new ListingGroup
+                {
+                    SearchId = idsStr,
+                    Items = result
+                });
+            }
+            _logger.LogInformation("Listing items with ids {Ids} were not found in cache. Retrieved from database.", ids);
+        }
+        else
+        {
+            result = itemGroup.Items;
+            _logger.LogInformation("Listing items with ids {Ids} were found in cache.", ids);
+        }
+        
+        return result;
+    }
+    
+    [HttpGet]
+    [Route("items/review/{id:int}")]
+    [ProducesResponseType((int)HttpStatusCode.NotFound)]
+    [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+    [ProducesResponseType(typeof(ListingReview), (int)HttpStatusCode.OK)]
+    public async Task<ActionResult<ListingGroup>> ItemReviewByIdAsync(int id)
+    {
+        if (id <= 0) return BadRequest();
+
+        var item = await _listingContext.ListingItems.SingleOrDefaultAsync(ci => ci.Id == id);
+
+        if (item != null)
+        {
+            var listingReview = _reviewService.GetListingReview(item.Id);
+            listingReview.AverageScore = listingReview.ReviewItems.Any()
+                ? listingReview.ReviewItems.Average(s => (s.TasteScore + s.TextureScore + s.VisualScore) / 3)
+                : 0;
+            return Ok(listingReview);
+        }
 
         return NotFound();
     }
@@ -95,7 +171,9 @@ public class ListingController : ControllerBase
             .AsAsyncEnumerable()
             .Where(item =>
             {
-                item.Distance = point.Distance(ProjectTo(item.Location));
+                //Multiply the degrees of separation of longitude and latitude by 111,139 to get the corresponding linear distances in meters
+                //https://sciencing.com/convert-latitude-longtitude-feet-2724.html
+                item.Distance = point.Distance(ProjectTo(item.Location)) * 111139;
                 return item.Distance <= range;
             }).ToListAsync();
         return Ok(itemsOnPage);
@@ -107,7 +185,7 @@ public class ListingController : ControllerBase
         var coordinateSystemServices = new CoordinateSystemServices(new Dictionary<int, string>
         {
             [4326] = GeographicCoordinateSystem.WGS84.WKT,
-            
+
             //https://epsg.io/4480 China Geodetic Coordinate System
             [4480] = @"GEOGCS[""China_Geodetic_Coordinate_System_2000_3D"",
     DATUM[""D_China_2000"",
@@ -158,7 +236,6 @@ public class ListingController : ControllerBase
             .Skip(pageSize * pageIndex)
             .Take(pageSize)
             .ToListAsync();
-
         return Ok(itemsOnPage);
     }
 

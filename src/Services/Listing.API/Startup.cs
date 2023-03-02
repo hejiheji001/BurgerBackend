@@ -1,3 +1,5 @@
+using Listing.API.Infrastructure.Repo;
+using Listing.API.Services;
 using NetTopologySuite.IO.Converters;
 
 namespace Listing.API;
@@ -23,6 +25,17 @@ public class Startup
             .AddSwagger(Configuration)
             .AddCustomHealthCheck(Configuration);
 
+        services.AddSingleton<ConnectionMultiplexer>(sp =>
+        {
+            var settings = sp.GetRequiredService<IOptions<ListingSettings>>().Value;
+            var configuration = ConfigurationOptions.Parse(settings.RedisConnectionString, true);
+            var conn = ConnectionMultiplexer.Connect(configuration);
+            return conn;
+        });
+        
+        services.AddTransient<IReviewService, ReviewService>();
+        services.AddTransient<IListingRepository, RedisListingRepository>();
+        
         var container = new ContainerBuilder();
         container.Populate(services);
 
@@ -32,11 +45,22 @@ public class Startup
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
     {
+        var pathBase = Configuration["PATH_BASE"];
+        if (!string.IsNullOrEmpty(pathBase))
+        {
+            app.UsePathBase(pathBase);
+        }
+        
         if (env.IsDevelopment())
         {
             app.UseDeveloperExceptionPage();
-            app.UseSwagger();
-            app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "List.API v1"));
+            app.UseSwagger()
+                .UseSwaggerUI(c =>
+                {
+                    c.SwaggerEndpoint(
+                        $"{(!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty)}/swagger/v1/swagger.json",
+                        "Listing.API V1");
+                });
         }
 
         app.UseRouting();
@@ -59,7 +83,7 @@ public class Startup
         });
 
         var eventBus = app.ApplicationServices.GetRequiredService<IEventBus>();
-        eventBus.Subscribe<PlaceStatusChangedToOpenEvent, PlaceStatusChangedToOpenEventHandler>();
+        eventBus.Subscribe<PlaceReviewUpdatedEvent, PlaceReviewUpdatedEventHandler>();
         // eventBus.Subscribe<PlaceStatusChangedToCloseEvent, PlaceStatusChangedToCloseEventHandler>();
     }
 }
@@ -243,7 +267,7 @@ public static class CustomExtensionMethods
         });
 
         services.AddSingleton<IEventBusSubscriptionsManager, InMemoryEventBusSubscriptionsManager>();
-        services.AddTransient<PlaceStatusChangedToOpenEventHandler>();
+        services.AddTransient<PlaceReviewUpdatedEventHandler>();
 
         return services;
     }

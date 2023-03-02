@@ -14,10 +14,9 @@ public record ListingItem
         {
             if (OpeningTimeStart < OpeningTimeEnd)
             {
-                return TimeOnly.FromDateTime(DateTime.Now).IsBetween(OpeningTimeEnd, OpeningTimeStart);
+                return TimeOnly.FromDateTime(DateTime.Now).IsBetween(OpeningTimeStart, OpeningTimeEnd);
             }
-            
-            return TimeOnly.FromDateTime(DateTime.Now).IsBetween(OpeningTimeStart, OpeningTimeEnd);
+            return !TimeOnly.FromDateTime(DateTime.Now).IsBetween(OpeningTimeEnd, OpeningTimeStart);
         }
     }
 

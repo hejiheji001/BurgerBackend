@@ -7,6 +7,9 @@ services:
       - ACCEPT_EULA=Y
     ports:
       - "5340:80"
+  
+  cachedata:
+    image: redis:alpine
 
   sqldata:
     image: mcr.microsoft.com/mssql/server:2019-latest
@@ -67,6 +70,7 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://0.0.0.0:80
       - ConnectionString=Server=sqldata;Initial Catalog=BurgerBackend.ListingDb;User Id=sa;Password=Pass@word;Encrypt=False;
+      - RedisConnectionString=cachedata
       - EventBusConnection=rabbitmq
       - PATH_BASE=/listing-api
     ports:
@@ -74,6 +78,7 @@ services:
     depends_on:
       - rabbitmq
       - sqldata
+      - cachedata
 
 volumes:
   sqldata:
