@@ -28,7 +28,7 @@ public class ReviewController : ControllerBase
     // GET api/v1/[controller]/items[?pageSize=3&pageIndex=10]
     [HttpGet]
     [Route("items")]
-    [ProducesResponseType(typeof(IEnumerable<ReviewItem>), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(IEnumerable<Model.Review>), (int)HttpStatusCode.OK)]
     [ProducesResponseType((int)HttpStatusCode.BadRequest)]
     public async Task<IActionResult> ItemsAsync([FromQuery] int pageSize = 10, [FromQuery] int pageIndex = 0)
     {
@@ -45,8 +45,8 @@ public class ReviewController : ControllerBase
     [Route("items/{id:int}")]
     [ProducesResponseType((int)HttpStatusCode.NotFound)]
     [ProducesResponseType((int)HttpStatusCode.BadRequest)]
-    [ProducesResponseType(typeof(IEnumerable<ReviewItem>), (int)HttpStatusCode.OK)]
-    public async Task<ActionResult<ReviewItem>> ItemsByIdAsync(int id)
+    [ProducesResponseType(typeof(IEnumerable<Model.Review>), (int)HttpStatusCode.OK)]
+    public async Task<ActionResult<Model.Review>> ItemsByIdAsync(int id)
     {
         if (id <= 0) return BadRequest();
 
@@ -62,7 +62,7 @@ public class ReviewController : ControllerBase
     [HttpPost]
     [ProducesResponseType((int)HttpStatusCode.Created)]
     [ProducesResponseType((int)HttpStatusCode.Forbidden)]
-    public async Task<ActionResult> CreateReviewItemAsync([FromBody] ReviewItem newReview)
+    public async Task<ActionResult> CreateReviewItemAsync([FromBody] Model.Review newReview)
     {
         var userId = _identityService.GetUserIdentity();
         Console.WriteLine(_identityService == null);
@@ -72,9 +72,8 @@ public class ReviewController : ControllerBase
             return Forbid();
         }
 
-        var item = new ReviewItem
+        var item = new Model.Review
         {
-            Id = newReview.Id,
             ListingItemId = newReview.ListingItemId,
             TasteScore = newReview.TasteScore,
             TextureScore = newReview.TextureScore,
@@ -99,7 +98,7 @@ public class ReviewController : ControllerBase
     [ProducesResponseType((int)HttpStatusCode.NotFound)]
     [ProducesResponseType((int)HttpStatusCode.Forbidden)]
     [ProducesResponseType((int)HttpStatusCode.Created)]
-    public async Task<ActionResult> UpdateReviewItemAsync([FromBody] ReviewItem newReview)
+    public async Task<ActionResult> UpdateReviewItemAsync([FromBody] Model.Review newReview)
     {
         var userId = _identityService.GetUserIdentity();
         if (userId == null) return Forbid();

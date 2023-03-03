@@ -52,7 +52,9 @@ https://github.com/dotnet-architecture/eShopOnContainers
 2. Docker compose networking:
    - Config: https://docs.docker.com/compose/networking/
    - VPN Issues: Container(ASP.Net) can't access another container(SQL Server) in the same docker compose network. Try close VPN!!
-   
+   - `localhost` on MacOS: Use `docker.for.mac.localhost` instead of localhost to avoid the issue caused changing ips
+     - https://docs.docker.com/desktop/networking/#use-cases-and-workarounds
+
 3. EF Core:
    - Iterating with `IAsyncEnumerable`:
      https://learn.microsoft.com/en-us/archive/msdn-magazine/2019/november/csharp-iterating-with-async-enumerables-in-csharp-8

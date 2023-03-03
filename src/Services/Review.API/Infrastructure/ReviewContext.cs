@@ -8,12 +8,12 @@ public class ReviewContext : DbContext
     {
     }
 
-    public DbSet<ReviewItem> ReviewItems { get; set; }
+    public DbSet<Model.Review> ReviewItems { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
-        var reviews = builder.Entity<ReviewItem>();
+        var reviews = builder.Entity<Model.Review>();
         reviews.ToTable("Review");
         reviews.Property(ci => ci.Id).IsRequired();
         reviews.Property(ci => ci.UserId).HasMaxLength(36).IsRequired();

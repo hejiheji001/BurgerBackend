@@ -20,12 +20,12 @@ public class ReviewInitializer
         });
     }
 
-    private IEnumerable<ReviewItem> GetPreconfiguredItems()
+    private IEnumerable<Model.Review> GetPreconfiguredItems()
     {
         var alice = "1";
         var bob = "2";
         
-        return new List<ReviewItem>
+        return new List<Model.Review>
         {
             new()
             {

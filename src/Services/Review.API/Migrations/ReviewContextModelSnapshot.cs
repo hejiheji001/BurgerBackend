@@ -22,7 +22,7 @@ namespace Review.API.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("Review.API.Model.ReviewItem", b =>
+            modelBuilder.Entity("Review.API.Model.Review", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
