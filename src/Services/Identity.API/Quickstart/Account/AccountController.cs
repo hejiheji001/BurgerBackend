@@ -113,9 +113,6 @@ namespace Identity.API.Quickstart.Account
                             return this.LoadingPage("Redirect", model.ReturnUrl);
                         }
 
-                        Console.WriteLine("===============");
-                        Console.WriteLine(model.ReturnUrl);
-                        
                         // we can trust model.ReturnUrl since GetAuthorizationContextAsync returned non-null
                         return Redirect(model.ReturnUrl);
                     }

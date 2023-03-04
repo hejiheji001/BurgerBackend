@@ -16,7 +16,7 @@ public class ListingReviewGroupUpdatedEventHandler : IIntegrationEventHandler<Li
             _logger.LogInformation(
                 "----- Handling integration event: {IntegrationEventId} at {AppName} - ({@IntegrationEvent})",
                 @event.Id, Program.AppName, @event);
-            // Do some UI update
+            // Do some UI updat
         }
     }
 }

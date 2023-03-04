@@ -13,8 +13,6 @@ try
     
     Log.Information("Applying migrations ({ApplicationContext})...", Review.API.Program.AppName);
 
-    Console.WriteLine("Migrate@" + host.Services.GetService<ReviewContext>().Database.GetDbConnection().ConnectionString);
-    
     host.MigrateDbContext<ReviewContext>((context, services) =>
         {
             var logger = services.GetService<ILogger<ReviewInitializer>>();

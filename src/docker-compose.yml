@@ -41,42 +41,7 @@ services:
       - "5103:80"
     depends_on:
       - sqldata
-        
-  identity-api2:
-    image: ${REGISTRY:-burger}/identity.api:${PLATFORM:-linux}-${TAG:-latest}
-    build:
-      context: .
-      dockerfile: Services/Identity.API/Dockerfile
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://0.0.0.0:80
-      - ConnectionString=Server=sqldata;Initial Catalog=BurgerBackend.IdentityDb;User Id=sa;Password=Pass@word;Encrypt=False;
-      - ReviewApiClient=http://localhost:5102
-      - UseCustomizationData=True
-    ports:
-      - "5103:80"
-    depends_on:
-      - sqldata
-  
-  review-api2:
-    image: ${REGISTRY:-burger}/review.api:${PLATFORM:-linux}-${TAG:-latest}
-    build:
-      context: .
-      dockerfile: Services/Review.API/Dockerfile
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://0.0.0.0:80
-      - IdentityUrlExternal=http://localhost:5103
-      - IdentityUrl=http://localhost:5103
-      - ConnectionString=Server=sqldata;Initial Catalog=BurgerBackend.ReviewDb;User Id=sa;Password=Pass@word;Encrypt=False;
-      - EventBusConnection=rabbitmq
-      - PATH_BASE=/review-api
-    ports:
-      - "5102:80"
-    depends_on:
-      - rabbitmq
-      - sqldata
-  
+
   review-api:
     image: ${REGISTRY:-burger}/review.api:${PLATFORM:-linux}-${TAG:-latest}
     build:

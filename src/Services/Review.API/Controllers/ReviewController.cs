@@ -65,8 +65,6 @@ public class ReviewController : ControllerBase
     public async Task<ActionResult> CreateReviewItemAsync([FromBody] Model.Review newReview)
     {
         var userId = _identityService.GetUserIdentity();
-        Console.WriteLine(_identityService == null);
-        
         if (userId == null)
         {
             return Forbid();

@@ -137,7 +137,6 @@ public static class CustomExtensionMethods
     {
         services.AddDbContext<ListingContext>(options =>
             {
-                Console.WriteLine(configuration["ConnectionString"]);
                 options.UseSqlServer(configuration["ConnectionString"],
                     sqlOptions =>
                     {
