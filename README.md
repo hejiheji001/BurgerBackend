@@ -37,6 +37,8 @@ https://github.com/dotnet-architecture/eShopOnContainers
 5. Tests: I didn't implement any unit tests. I only tested the API manually using Swagger. 
 6. HTTPS: I didn't implement HTTPS. I used HTTP for simplicity.
 7. Image: Currently the images upload is not supported.
+   This feature is under development. I am using Minio as the image storage.
+   The implementation will also support Azure Blob Storage and AWS S3.
 8. MQTT: The current eventbus is using AMQP, while for mobile devices, MQTT maybe better
 
 
