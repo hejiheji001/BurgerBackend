@@ -11,7 +11,7 @@ services:
   cachedata:
     image: redis:alpine
 
-  sqldata:
+  sqldata-listing:
     image: mcr.microsoft.com/mssql/server:2019-latest
     environment:
       - MSSQL_SA_PASSWORD=Pass@word
@@ -19,7 +19,27 @@ services:
     ports:
       - "6433:1433"
     volumes:
-      - sqldata:/var/opt/mssql
+      - sqldata-listing:/var/opt/mssql
+    
+  sqldata-review:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    environment:
+      - MSSQL_SA_PASSWORD=Pass@word
+      - ACCEPT_EULA=Y
+    ports:
+      - "6434:1433"
+    volumes:
+      - sqldata-review:/var/opt/mssql
+  
+  sqldata-identity:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    environment:
+      - MSSQL_SA_PASSWORD=Pass@word
+      - ACCEPT_EULA=Y
+    ports:
+      - "6435:1433"
+    volumes:
+      - sqldata-identity:/var/opt/mssql
 
   rabbitmq:
     image: rabbitmq:3-management-alpine
@@ -34,13 +54,13 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://0.0.0.0:80
-      - ConnectionString=Server=sqldata;Initial Catalog=BurgerBackend.IdentityDb;User Id=sa;Password=Pass@word;Encrypt=False;
+      - ConnectionString=Server=sqldata-identity;Initial Catalog=BurgerBackend.IdentityDb;User Id=sa;Password=Pass@word;Encrypt=False;
       - ReviewApiClient=http://docker.for.mac.localhost:5102
       - UseCustomizationData=True
     ports:
       - "5103:80"
     depends_on:
-      - sqldata
+      - sqldata-listing
 
   review-api:
     image: ${REGISTRY:-burger}/review.api:${PLATFORM:-linux}-${TAG:-latest}
@@ -52,14 +72,14 @@ services:
       - ASPNETCORE_URLS=http://0.0.0.0:80
       - IdentityUrlExternal=http://docker.for.mac.localhost:5103
       - IdentityUrl=http://docker.for.mac.localhost:5103
-      - ConnectionString=Server=sqldata;Initial Catalog=BurgerBackend.ReviewDb;User Id=sa;Password=Pass@word;Encrypt=False;
+      - ConnectionString=Server=sqldata-review;Initial Catalog=BurgerBackend.ReviewDb;User Id=sa;Password=Pass@word;Encrypt=False;
       - EventBusConnection=rabbitmq
       - PATH_BASE=/review-api
     ports:
       - "5102:80"
     depends_on:
       - rabbitmq
-      - sqldata
+      - sqldata-review
   
   listing-api:
     image: ${REGISTRY:-burger}/listing.api:${PLATFORM:-linux}-${TAG:-latest}
@@ -69,7 +89,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://0.0.0.0:80
-      - ConnectionString=Server=sqldata;Initial Catalog=BurgerBackend.ListingDb;User Id=sa;Password=Pass@word;Encrypt=False;
+      - ConnectionString=Server=sqldata-listing;Initial Catalog=BurgerBackend.ListingDb;User Id=sa;Password=Pass@word;Encrypt=False;
       - RedisConnectionString=cachedata
       - EventBusConnection=rabbitmq
       - PATH_BASE=/listing-api
@@ -77,9 +97,15 @@ services:
       - "5101:80"
     depends_on:
       - rabbitmq
-      - sqldata
+      - sqldata-identity
       - cachedata
 
 volumes:
-  sqldata:
+  sqldata-listing:
+    external: false
+    
+  sqldata-review:
+    external: false
+    
+  sqldata-identity:
     external: false

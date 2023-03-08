@@ -16,7 +16,7 @@ public class ReviewContext : DbContext
         var reviews = builder.Entity<Model.Review>();
         reviews.ToTable("Review");
         reviews.Property(ci => ci.Id).IsRequired();
-        reviews.Property(ci => ci.UserId).HasMaxLength(36).IsRequired();
+        reviews.Property(ci => ci.UserId).HasColumnType("varchar(36)").HasMaxLength(36).IsRequired();
         reviews.Property(ci => ci.ListingItemId).IsRequired();
         reviews.Property(ci => ci.TextureScore).IsRequired();
         reviews.Property(ci => ci.TextureScore).IsRequired();
