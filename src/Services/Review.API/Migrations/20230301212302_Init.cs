@@ -17,7 +17,7 @@ namespace Review.API.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    UserId = table.Column<int>(type: "int", nullable: false),
+                    UserId = table.Column<int>(type: "varchar(36)", nullable: false),
                     ListingItemId = table.Column<int>(type: "int", nullable: false),
                     TasteScore = table.Column<int>(type: "int", nullable: false),
                     TextureScore = table.Column<int>(type: "int", nullable: false),
