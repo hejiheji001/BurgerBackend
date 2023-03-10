@@ -23,3 +23,11 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+namespace Image.API
+{
+    public partial class Program
+    {
+        public static string AppName => "Image.API";
+    }
+}
