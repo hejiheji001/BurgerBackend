@@ -1,5 +1,4 @@
-﻿using Listing.API.Infrastructure;
-using Review.API.Infrastructure.Repo;
+﻿using Review.API.Infrastructure.Repo;
 using ListingVisitedEvent = Review.API.IntegrationEvents.Events.ListingVisitedEvent;
 
 namespace Review.API.IntegrationEvents.EventHandlers;

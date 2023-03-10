@@ -24,7 +24,7 @@ global using Microsoft.Extensions.Options;
 global using Microsoft.OpenApi.Models;
 global using RabbitMQ.Client;
 global using Serilog.Context;
-global using Serilog;
+global using Minio;
 global using Image.API.Services;
 global using Image.API.Infrastructure;
 global using Image.API.IntegrationEvents;

@@ -1,6 +1,4 @@
-﻿using Review.API.Model;
-
-namespace Review.API.Infrastructure;
+﻿namespace Review.API.Infrastructure;
 
 public class ReviewContext : DbContext
 {

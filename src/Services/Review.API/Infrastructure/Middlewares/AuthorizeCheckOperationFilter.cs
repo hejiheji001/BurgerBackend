@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Swashbuckle.AspNetCore.SwaggerGen;
+﻿using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace Review.API.Infrastructure.Middlewares;
 

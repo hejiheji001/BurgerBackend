@@ -1,5 +1,3 @@
-using Review.API.Model;
-
 namespace Review.API.Infrastructure;
 
 public class ReviewInitializer

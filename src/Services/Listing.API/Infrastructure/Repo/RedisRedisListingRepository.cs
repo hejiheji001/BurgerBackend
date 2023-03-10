@@ -1,6 +1,3 @@
-using System.Diagnostics;
-using NetTopologySuite.IO.Converters;
-
 namespace Listing.API.Infrastructure.Repo;
 
 public class RedisRedisListingRepository : IRedisListingRepository

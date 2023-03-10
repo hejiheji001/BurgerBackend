@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Review.API.Controllers;
 using Review.API.Infrastructure.Middlewares;
 using Review.API.Infrastructure.Repo;
-using Review.API.Services;
 
 namespace Review.API;
 
